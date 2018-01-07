@@ -29,23 +29,24 @@
 
 #include "test.h"
 #include "safe_macros.h"
+#include "lapi/futex.h"
 
 #define DEFAULT_MSEC_TIMEOUT 10000
 
-typedef volatile uint32_t futex_t;
-
-static futex_t *futexes;
-static int page_size;
+futex_t *tst_futexes;
+unsigned int tst_max_futexes;
 
 void tst_checkpoint_init(const char *file, const int lineno,
                          void (*cleanup_fn)(void))
 {
 	int fd;
+	unsigned int page_size;
 
-	if (futexes) {
+	if (tst_futexes) {
 		tst_brkm(TBROK, cleanup_fn,
-		         "%s: %d checkopoints allready initialized",
+		         "%s: %d checkpoints already initialized",
 		         file, lineno);
+		return;
 	}
 
 	/*
@@ -63,6 +64,7 @@ void tst_checkpoint_init(const char *file, const int lineno,
 		tst_brkm(TBROK, cleanup_fn,
 		         "%s:%d You have to create test temporary directory "
 		         "first (call tst_tmpdir())", file, lineno);
+		return;
 	}
 
 	page_size = getpagesize();
@@ -72,8 +74,10 @@ void tst_checkpoint_init(const char *file, const int lineno,
 
 	SAFE_FTRUNCATE(cleanup_fn, fd, page_size);
 
-	futexes = SAFE_MMAP(cleanup_fn, NULL, page_size,
+	tst_futexes = SAFE_MMAP(cleanup_fn, NULL, page_size,
 	                    PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+	tst_max_futexes = page_size / sizeof(uint32_t);
 
 	SAFE_CLOSE(cleanup_fn, fd);
 }
@@ -82,7 +86,7 @@ int tst_checkpoint_wait(unsigned int id, unsigned int msec_timeout)
 {
 	struct timespec timeout;
 
-	if (id >= page_size / sizeof(uint32_t)) {
+	if (id >= tst_max_futexes) {
 		errno = EOVERFLOW;
 		return -1;
 	}
@@ -90,7 +94,8 @@ int tst_checkpoint_wait(unsigned int id, unsigned int msec_timeout)
 	timeout.tv_sec = msec_timeout/1000;
 	timeout.tv_nsec = (msec_timeout%1000) * 1000000;
 
-	return syscall(SYS_futex, &futexes[id], FUTEX_WAIT, futexes[id], &timeout);
+	return syscall(SYS_futex, &tst_futexes[id], FUTEX_WAIT,
+		       tst_futexes[id], &timeout);
 }
 
 int tst_checkpoint_wake(unsigned int id, unsigned int nr_wake,
@@ -98,13 +103,18 @@ int tst_checkpoint_wake(unsigned int id, unsigned int nr_wake,
 {
 	unsigned int msecs = 0, waked = 0;
 
-	if (id >= page_size / sizeof(uint32_t)) {
+	if (id >= tst_max_futexes) {
 		errno = EOVERFLOW;
 		return -1;
 	}
 
-	do {
-		waked += syscall(SYS_futex, &futexes[id], FUTEX_WAKE, INT_MAX, NULL);
+	for (;;) {
+		waked += syscall(SYS_futex, &tst_futexes[id], FUTEX_WAKE,
+				 INT_MAX, NULL);
+
+		if (waked == nr_wake)
+			break;
+
 		usleep(1000);
 		msecs++;
 
@@ -112,21 +122,26 @@ int tst_checkpoint_wake(unsigned int id, unsigned int nr_wake,
 			errno = ETIMEDOUT;
 			return -1;
 		}
-
-	} while (waked != nr_wake);
+	}
 
 	return 0;
 }
 
 void tst_safe_checkpoint_wait(const char *file, const int lineno,
-                              void (*cleanup_fn)(void), unsigned int id)
+                              void (*cleanup_fn)(void), unsigned int id,
+			      unsigned int msec_timeout)
 {
-	int ret = tst_checkpoint_wait(id, DEFAULT_MSEC_TIMEOUT);
+	int ret;
+
+	if (!msec_timeout)
+		msec_timeout = DEFAULT_MSEC_TIMEOUT;
+
+	ret = tst_checkpoint_wait(id, msec_timeout);
 
 	if (ret) {
 		tst_brkm(TBROK | TERRNO, cleanup_fn,
 		         "%s:%d: tst_checkpoint_wait(%u, %i)",
-		         file, lineno, id, DEFAULT_MSEC_TIMEOUT);
+		         file, lineno, id, msec_timeout);
 	}
 }
 

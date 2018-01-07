@@ -45,9 +45,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "test.h"
-#include <libclone.h>
 #include "pidns_helper.h"
+#include "test.h"
 
 char *TCID = "pidns13";
 int TST_TOTAL = 1;
@@ -55,15 +54,6 @@ int pipe_fd[2];
 
 #define CHILD_PID       1
 #define PARENT_PID      0
-
-/*
- * cleanup() - performs all ONE TIME cleanup for this test at
- *             completion or premature exit.
- */
-void cleanup()
-{
-
-}
 
 /*
  * child_signal_handler() - dummy function for sigaction()
@@ -92,7 +82,6 @@ int child_fn(void *arg)
 	ppid = getppid();
 	if (pid != CHILD_PID || ppid != PARENT_PID) {
 		tst_resm(TBROK, "cinit%d: pidns is not created.", cinit_no);
-		cleanup();
 	}
 
 	if (cinit_no == 1) {
@@ -100,24 +89,20 @@ int child_fn(void *arg)
 		/* close pipe write descriptor */
 		if (close(pipe_fd[1]) == -1) {
 			tst_resm(TBROK, "cinit1: close(pipe_fd[1]) failed");
-			cleanup();
 		}
 
 		/* Let cinit1 to get SIGUSR1 on I/O availability */
 		if (fcntl(pipe_fd[0], F_SETOWN, pid) == -1) {
 			tst_resm(TBROK, "cinit1: fcntl(F_SETOWN) failed");
-			cleanup();
 		}
 
 		if (fcntl(pipe_fd[0], F_SETSIG, SIGUSR1) == -1) {
 			tst_resm(TBROK, "cinit1: fcntl(F_SETSIG) failed");
-			cleanup();
 		}
 
 		if (fcntl(pipe_fd[0], F_SETFL,
 			  fcntl(pipe_fd[0], F_GETFL) | O_ASYNC) == -1) {
 			tst_resm(TBROK, "cinit1: fcntl(F_SETFL) failed");
-			cleanup();
 		}
 
 		/* Set signal handler for SIGUSR1, also mask other signals */
@@ -126,7 +111,6 @@ int child_fn(void *arg)
 		sa.sa_sigaction = child_signal_handler;
 		if (sigaction(SIGUSR1, &sa, NULL) == -1) {
 			tst_resm(TBROK, "cinit1: sigaction() failed");
-			cleanup();
 		}
 
 		tst_resm(TINFO, "cinit1: setup handler for async I/O on pipe");
@@ -142,7 +126,6 @@ int child_fn(void *arg)
 		/* Wait for SIGUSR1 */
 		if (sigtimedwait(&newset, &info, &timeout) != SIGUSR1) {
 			tst_resm(TBROK, "cinit1: sigtimedwait() failed.");
-			cleanup();
 		}
 
 		/* Recieved SIGUSR1. Check details. */
@@ -161,7 +144,6 @@ int child_fn(void *arg)
 		/* close pipe read descriptor */
 		if (close(pipe_fd[0]) == -1) {
 			tst_resm(TBROK, "cinit2: close(pipe_fd[0]) failed");
-			cleanup();
 		}
 
 		/* sleep for few seconds to avoid race with cinit1 */
@@ -171,7 +153,6 @@ int child_fn(void *arg)
 		tst_resm(TINFO, "cinit2: writing some data in pipe");
 		if (write(pipe_fd[1], "test\n", 5) == -1) {
 			tst_resm(TBROK, "cinit2: write() failed");
-			cleanup();
 		}
 
 		/* all done, close the descriptors opened */
@@ -179,13 +160,12 @@ int child_fn(void *arg)
 	}
 
 	/* cleanup and exit */
-	cleanup();
 	exit(0);
 }
 
 static void setup(void)
 {
-	tst_require_root(NULL);
+	tst_require_root();
 	check_newpid();
 }
 
@@ -204,13 +184,11 @@ int main(int argc, char *argv[])
 	/* create pipe */
 	if (pipe(pipe_fd) == -1) {
 		tst_resm(TBROK, "parent: pipe creation failed");
-		cleanup();
 	}
 
 	/* container creation on PID namespace */
 	if (!cinit_no) {
 		tst_resm(TBROK, "memory allocation failed.");
-		cleanup();
 	}
 
 	/* Create container 1 */
@@ -222,7 +200,6 @@ int main(int argc, char *argv[])
 	cpid2 = ltp_clone_quick(CLONE_NEWPID | SIGCHLD, child_fn, cinit_no);
 	if (cpid1 < 0 || cpid2 < 0) {
 		tst_resm(TBROK, "parent: clone() failed.");
-		cleanup();
 	}
 
 	/* Close unwanted descriptors */
@@ -243,9 +220,6 @@ int main(int argc, char *argv[])
 	if (WIFSIGNALED(status) && WTERMSIG(status))
 		tst_resm(TWARN, "parent: cinit1 is terminated by signal(%s)",
 			 strsignal(WTERMSIG(status)));
-
-	/* Cleanup and exit */
-	cleanup();
 
 	/* Control won't reach below */
 	exit(0);

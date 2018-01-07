@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
@@ -110,7 +110,7 @@ static void setup(void)
 {
 	tst_sig(FORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	ltpuser = SAFE_GETPWNAM(cleanup, nobody_uid);
 	SAFE_SETEUID(NULL, ltpuser->pw_uid);

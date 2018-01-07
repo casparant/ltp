@@ -22,6 +22,7 @@
 #include <unistd.h>
 
 #include "test.h"
+#include "safe_macros.h"
 #include "common_timers.h"
 
 static void setup(void);
@@ -80,11 +81,7 @@ int main(int ac, char **av)
 
 			/* Change the UID back to root */
 			if (i == TST_TOTAL - 1) {
-				if (seteuid(0) == -1) {
-					tst_brkm(TBROK | TERRNO, cleanup,
-						 "Failed to set the effective "
-						 "uid to root");
-				}
+				SAFE_SETEUID(cleanup, 0);
 			}
 
 			/* check return code */
@@ -160,7 +157,7 @@ static void setup(void)
 {
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	if (ltp_syscall(__NR_clock_gettime, CLOCK_REALTIME, &saved) < 0)
 		tst_brkm(TBROK, NULL, "Clock gettime failed");

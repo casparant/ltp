@@ -26,9 +26,9 @@
 
 #include <errno.h>
 #include "test.h"
-#include "tst_module.h"
+#include "old_module.h"
 #include "safe_macros.h"
-#include "linux_syscall_numbers.h"
+#include "lapi/syscalls.h"
 
 #define MODULE_NAME	"dummy_del_mod"
 #define MODULE_NAME_KO	"dummy_del_mod.ko"
@@ -77,7 +77,7 @@ static void setup(void)
 {
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	TEST_PAUSE;
 }

@@ -132,6 +132,7 @@ int test_rwflag(int i, int cnt)
 	time_t atime;
 	struct passwd *ltpuser;
 	struct stat file_stat;
+	char readbuf[20];
 
 	switch (i) {
 	case 0:
@@ -260,16 +261,7 @@ int test_rwflag(int i, int cnt)
 	case 5:
 		/* Validate MS_NOSUID flag of mount call */
 
-		snprintf(file, PATH_MAX, "%ssetuid_test", path_name);
-		SAFE_FILE_PRINTF(cleanup, file, "TEST FILE");
-
-		if (stat(file, &file_stat) < 0)
-			tst_brkm(TBROK, cleanup, "stat for setuid_test failed");
-
-		if (file_stat.st_mode != SUID_MODE &&
-		    chmod(file, SUID_MODE) < 0)
-			tst_brkm(TBROK, cleanup,
-				 "setuid for setuid_test failed");
+		snprintf(file, PATH_MAX, "%smount03_setuid_test", path_name);
 
 		pid = fork();
 		switch (pid) {
@@ -291,9 +283,8 @@ int test_rwflag(int i, int cnt)
 				/* reset the setup_uid */
 				if (status)
 					return 0;
-				else
-					return 1;
 			}
+			return 1;
 		}
 	case 6:
 		/* Validate MS_NOATIME flag of mount call */
@@ -307,11 +298,13 @@ int test_rwflag(int i, int cnt)
 
 		if (write(fd, "TEST_MS_NOATIME", 15) != 15) {
 			tst_resm(TWARN | TERRNO, "write %s failed", file);
+			close(fd);
 			return 1;
 		}
 
 		if (fstat(fd, &file_stat) == -1) {
 			tst_resm(TWARN | TERRNO, "stat %s failed #1", file);
+			close(fd);
 			return 1;
 		}
 
@@ -319,13 +312,15 @@ int test_rwflag(int i, int cnt)
 
 		sleep(1);
 
-		if (read(fd, NULL, 20) == -1) {
+		if (read(fd, readbuf, sizeof(readbuf)) == -1) {
 			tst_resm(TWARN | TERRNO, "read %s failed", file);
+			close(fd);
 			return 1;
 		}
 
 		if (fstat(fd, &file_stat) == -1) {
 			tst_resm(TWARN | TERRNO, "stat %s failed #2", file);
+			close(fd);
 			return 1;
 		}
 		close(fd);
@@ -342,10 +337,11 @@ int test_rwflag(int i, int cnt)
 static void setup(void)
 {
 	char path[PATH_MAX];
+	struct stat file_stat;
 
 	tst_sig(FORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_tmpdir();
 
@@ -355,7 +351,7 @@ static void setup(void)
 	if (!device)
 		tst_brkm(TCONF, cleanup, "Failed to obtain block device");
 
-	tst_mkfs(cleanup, device, fs_type, NULL);
+	tst_mkfs(cleanup, device, fs_type, NULL, NULL);
 
 	SAFE_MKDIR(cleanup, mntpoint, DIR_MODE);
 
@@ -369,13 +365,25 @@ static void setup(void)
 	strncpy(path, path_name, PATH_MAX);
 	snprintf(path_name, PATH_MAX, "%s/%s/", path, mntpoint);
 
+	SAFE_MOUNT(cleanup, device, mntpoint, fs_type, 0, NULL);
+	TST_RESOURCE_COPY(cleanup, "mount03_setuid_test", path_name);
+
+	snprintf(file, PATH_MAX, "%smount03_setuid_test", path_name);
+	SAFE_STAT(cleanup, file, &file_stat);
+
+	if (file_stat.st_mode != SUID_MODE &&
+	    chmod(file, SUID_MODE) < 0)
+		tst_brkm(TBROK, cleanup,
+			 "setuid for setuid_test failed");
+	SAFE_UMOUNT(cleanup, mntpoint);
+
 	TEST_PAUSE;
 }
 
 static void cleanup(void)
 {
 	if (device)
-		tst_release_device(NULL, device);
+		tst_release_device(device);
 
 	tst_rmdir();
 }

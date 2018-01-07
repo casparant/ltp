@@ -55,6 +55,7 @@
 #include <termio.h>
 #include <termios.h>
 #include "test.h"
+#include "safe_macros.h"
 
 char *TCID = "ioctl01";
 int TST_TOTAL = 5;
@@ -115,13 +116,11 @@ int main(int ac, char **av)
 		tst_brkm(TBROK, NULL, "You must specify a tty device with "
 			 "the -D option.");
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	setup();
 
-	fd = open(devname, O_RDWR, 0777);
-	if (fd == -1)
-		tst_brkm(TBROK | TERRNO, cleanup, "Couldn't open %s", devname);
+	fd = SAFE_OPEN(cleanup, devname, O_RDWR, 0777);
 
 	for (lc = 0; TEST_LOOPING(lc); lc++) {
 

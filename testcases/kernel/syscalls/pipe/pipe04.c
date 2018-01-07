@@ -49,6 +49,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "test.h"
+#include "safe_macros.h"
 
 char *TCID = "pipe04";
 int TST_TOTAL = 1;
@@ -61,7 +62,7 @@ void c1func(void);
 void c2func(void);
 void alarmfunc(int);
 
-ssize_t safe_read(int fd, void *buf, size_t count)
+ssize_t do_read(int fd, void *buf, size_t count)
 {
 	ssize_t n;
 
@@ -95,9 +96,7 @@ int main(int ac, char **av)
 		/* reset tst_count in case we are looping */
 		tst_count = 0;
 
-		if (pipe(fildes) == -1)
-			tst_brkm(TBROK, cleanup, "pipe() failed - errno %d",
-				 errno);
+		SAFE_PIPE(cleanup, fildes);
 
 		if ((c1pid = FORK_OR_VFORK()) == -1)
 			tst_brkm(TBROK, cleanup, "fork() failed - "
@@ -132,7 +131,7 @@ int main(int ac, char **av)
 		 * Read a bit from the children first
 		 */
 		while ((acnt < 100) && (bcnt < 100)) {
-			bytesread = safe_read(fildes[0], rbuf, sizeof(rbuf));
+			bytesread = do_read(fildes[0], rbuf, sizeof(rbuf));
 			if (bytesread < 0) {
 				tst_resm(TFAIL, "Unable to read from pipe, "
 					 "errno=%d", errno);

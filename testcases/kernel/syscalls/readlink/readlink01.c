@@ -72,6 +72,7 @@
 #include <pwd.h>
 
 #include "test.h"
+#include "safe_macros.h"
 
 #define TESTFILE	"testfile"
 #define SYMFILE		"slink_file"
@@ -81,7 +82,7 @@
 char *TCID = "readlink01";
 int TST_TOTAL = 1;
 
-int exp_val;			/* strlen of testfile */
+const int exp_val = sizeof(TESTFILE) - 1;	/* strlen of testfile */
 
 void setup();
 void cleanup();
@@ -153,14 +154,12 @@ void setup(void)
 {
 	int fd;			/* file handle for testfile */
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	if ((ltpuser = getpwnam(nobody_uid)) == NULL) {
 		tst_brkm(TBROK, cleanup, "getpwname(nobody_uid) failed ");
 	}
-	if (seteuid(ltpuser->pw_uid) == -1) {
-		tst_brkm(TBROK | TERRNO, cleanup, "seteuid to nobody failed");
-	}
+	SAFE_SETEUID(cleanup, ltpuser->pw_uid);
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
@@ -179,13 +178,7 @@ void setup(void)
 	}
 
 	/* Create a symlink of testfile under temporary directory */
-	if (symlink(TESTFILE, SYMFILE) < 0) {
-		tst_brkm(TBROK | TERRNO, cleanup, "symlink(%s, %s) failed",
-			 TESTFILE, SYMFILE);
-	}
-
-	/* Get the strlen of testfile */
-	exp_val = strlen(TESTFILE);
+	SAFE_SYMLINK(cleanup, TESTFILE, SYMFILE);
 }
 
 /*

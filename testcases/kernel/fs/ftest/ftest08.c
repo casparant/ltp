@@ -47,7 +47,7 @@
 #include <sys/param.h>
 #include <sys/wait.h>
 #include <sys/file.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/uio.h>
 #include <errno.h>
@@ -55,6 +55,7 @@
 #include <unistd.h>
 #include <inttypes.h>
 #include "test.h"
+#include "safe_macros.h"
 #include "libftest.h"
 
 char *TCID = "ftest08";
@@ -124,12 +125,7 @@ static void init(void)
 		sprintf(filename, "%s/ftest08.%d", getcwd(wdbuf, MAXPATHLEN),
 			getpid());
 
-	fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, 0666);
-
-	if (fd < 0) {
-		tst_brkm(TBROK, NULL, "Error %d creating file %s", errno,
-			 filename);
-	}
+	fd = SAFE_OPEN(NULL, filename, O_RDWR | O_CREAT | O_TRUNC, 0666);
 
 	close(fd);
 
@@ -239,6 +235,7 @@ static void dotest(int testers, int me, int fd)
 	struct iovec val0_iovec[MAXIOVCNT];
 	struct iovec val_iovec[MAXIOVCNT];
 	int w_ioveclen;
+	struct stat stat;
 
 	nchunks = max_size / (testers * csize);
 	whenmisc = 0;
@@ -370,6 +367,10 @@ static void dotest(int testers, int me, int fd)
 							 " for val %d count %d xfr %d.",
 							 me, CHUNK(chunk), val0,
 							 count, xfr);
+						fstat(fd, &stat);
+						tst_resm(TINFO,
+							 "\tStat: size=%llx, ino=%x",
+							 stat.st_size, (unsigned)stat.st_ino);
 						ft_dumpiov(&r_iovec[i]);
 						ft_dumpbits(bits,
 							    (nchunks + 7) / 8);
@@ -397,6 +398,10 @@ static void dotest(int testers, int me, int fd)
 							 " for val %d count %d xfr %d.",
 							 me, CHUNK(chunk), val,
 							 count, xfr);
+						fstat(fd, &stat);
+						tst_resm(TINFO,
+							 "\tStat: size=%llx, ino=%x",
+							 stat.st_size, (unsigned)stat.st_ino);
 						ft_dumpiov(&r_iovec[i]);
 						ft_dumpbits(bits,
 							    (nchunks + 7) / 8);

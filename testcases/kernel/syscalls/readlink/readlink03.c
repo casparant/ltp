@@ -39,7 +39,7 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
@@ -117,7 +117,7 @@ void setup(void)
 	struct passwd *ltpuser;
 	int i;
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 

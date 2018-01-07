@@ -110,11 +110,12 @@
  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#**/
 
 #include <sys/types.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
 #include "test.h"
+#include "safe_macros.h"
 
 void setup();
 void cleanup();
@@ -157,11 +158,7 @@ int main(int ac, char **av)
 				 fname, symlnk, TEST_ERRNO,
 				 strerror(TEST_ERRNO));
 		} else {
-			if (unlink(symlnk) == -1) {
-				tst_brkm(TBROK, cleanup,
-					 "unlink(%s) Failed, errno=%d : %s",
-					 symlnk, errno, strerror(errno));
-			}
+			SAFE_UNLINK(cleanup, symlnk);
 		}
 	}
 

@@ -22,7 +22,7 @@
 #include <sys/mount.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <pwd.h>
 #include "test.h"
 #include "safe_macros.h"
@@ -88,7 +88,7 @@ static void setup(void)
 
 	tst_sig(FORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_tmpdir();
 
@@ -98,7 +98,7 @@ static void setup(void)
 	if (!device)
 		tst_brkm(TCONF, cleanup, "Failed to obtain block device");
 
-	tst_mkfs(cleanup, device, fs_type, NULL);
+	tst_mkfs(cleanup, device, fs_type, NULL, NULL);
 
 	ltpuser = SAFE_GETPWNAM(cleanup, nobody_uid);
 	SAFE_SETEUID(cleanup, ltpuser->pw_uid);
@@ -113,7 +113,7 @@ static void cleanup(void)
 		tst_resm(TWARN | TERRNO, "seteuid(0) failed");
 
 	if (device)
-		tst_release_device(NULL, device);
+		tst_release_device(device);
 
 	tst_rmdir();
 }

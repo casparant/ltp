@@ -28,7 +28,7 @@
  *
  * There are 4 test cases:
  * 1. Get an non-existing attribute,
- *    getxattr(2) should return -1 and set errno to ENOATTR
+ *    getxattr(2) should return -1 and set errno to ENODATA
  * 2. Buffer size is smaller than attribute value size,
  *    getxattr(2) should return -1 and set errno to ERANGE
  * 3. Get attribute, getxattr(2) should succeed
@@ -44,14 +44,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_ATTR_XATTR_H
-#include <attr/xattr.h>
+#ifdef HAVE_SYS_XATTR_H
+# include <sys/xattr.h>
 #endif
 #include "test.h"
+#include "safe_macros.h"
 
 char *TCID = "getxattr01";
 
-#ifdef HAVE_ATTR_XATTR_H
+#ifdef HAVE_SYS_XATTR_H
 #define XATTR_TEST_KEY "user.testkey"
 #define XATTR_TEST_VALUE "this is a test value"
 #define XATTR_TEST_VALUE_SIZE 20
@@ -75,7 +76,7 @@ struct test_case tc[] = {
 	 .key = "user.nosuchkey",
 	 .value = NULL,
 	 .size = BUFFSIZE - 1,
-	 .exp_err = ENOATTR,
+	 .exp_err = ENODATA,
 	 },
 	{			/* case 01, small value buffer */
 	 .fname = filename,
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
 	for (lc = 0; TEST_LOOPING(lc); lc++) {
 		tst_count = 0;
 
-		for (i = 0; i < (sizeof(tc) / sizeof(tc[0])); i++) {
+		for (i = 0; i < ARRAY_SIZE(tc); i++) {
 			TEST(getxattr(tc[i].fname, tc[i].key, tc[i].value,
 				      tc[i].size));
 
@@ -136,16 +137,13 @@ static void setup(void)
 	int fd;
 	int i;
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_tmpdir();
 
 	/* Create test file and setup initial xattr */
 	snprintf(filename, BUFSIZ, "getxattr01testfile");
-	fd = creat(filename, 0644);
-	if (fd == -1)
-		tst_brkm(TBROK | TERRNO, cleanup, "Create test file(%s) failed",
-			 filename);
+	fd = SAFE_CREAT(cleanup, filename, 0644);
 	close(fd);
 	if (setxattr(filename, XATTR_TEST_KEY, XATTR_TEST_VALUE,
 		     strlen(XATTR_TEST_VALUE), XATTR_CREATE) == -1) {
@@ -156,7 +154,7 @@ static void setup(void)
 	}
 
 	/* Prepare test cases */
-	for (i = 0; i < (sizeof(tc) / sizeof(tc[0])); i++) {
+	for (i = 0; i <  ARRAY_SIZE(tc); i++) {
 		tc[i].value = malloc(BUFFSIZE);
 		if (tc[i].value == NULL) {
 			tst_brkm(TBROK | TERRNO, cleanup,
@@ -171,9 +169,9 @@ static void cleanup(void)
 {
 	tst_rmdir();
 }
-#else /* HAVE_ATTR_XATTR_H */
+#else /* HAVE_SYS_XATTR_H */
 int main(int argc, char *argv[])
 {
-	tst_brkm(TCONF, NULL, "<attr/xattr.h> does not exist.");
+	tst_brkm(TCONF, NULL, "<sys/xattr.h> does not exist.");
 }
 #endif

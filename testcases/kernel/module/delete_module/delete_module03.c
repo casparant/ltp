@@ -26,9 +26,9 @@
 
 #include <errno.h>
 #include "test.h"
-#include "tst_module.h"
+#include "old_module.h"
 #include "safe_macros.h"
-#include "linux_syscall_numbers.h"
+#include "lapi/syscalls.h"
 
 #define DUMMY_MOD		"dummy_del_mod"
 #define DUMMY_MOD_KO		"dummy_del_mod.ko"
@@ -93,7 +93,7 @@ static void setup(void)
 {
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	/* Load first kernel module */
 	tst_module_load(cleanup, DUMMY_MOD_KO, NULL);

@@ -78,7 +78,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
@@ -87,6 +87,7 @@
 #include <pwd.h>
 
 #include "test.h"
+#include "safe_macros.h"
 
 #define MODE_RWX	(S_IRWXU | S_IRWXG | S_IRWXO)
 #define PERMS		043777
@@ -164,7 +165,7 @@ void setup(void)
 	struct passwd *nobody_u;
 	struct group *bin_group;
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_sig(FORK, DEF_HANDLER, cleanup);
 
@@ -187,18 +188,14 @@ void setup(void)
 	 * mode permissions and change the gid of test directory to that of
 	 * guest user.
 	 */
-	if (mkdir(TESTDIR, MODE_RWX) < 0) {
-		tst_brkm(TBROK, cleanup, "mkdir(2) of %s failed", TESTDIR);
-	}
+	SAFE_MKDIR(cleanup, TESTDIR, MODE_RWX);
 
 	if (setgroups(1, &nobody_u->pw_gid) == -1)
 		tst_brkm(TBROK, cleanup,
 			 "Couldn't change supplementary group Id: %s",
 			 strerror(errno));
 
-	if (chown(TESTDIR, nobody_u->pw_uid, bin_group->gr_gid) == -1)
-		tst_brkm(TBROK, cleanup, "Couldn't change owner of testdir: %s",
-			 strerror(errno));
+	SAFE_CHOWN(cleanup, TESTDIR, nobody_u->pw_uid, bin_group->gr_gid);
 
 	/* change to nobody:nobody */
 	if (setegid(nobody_u->pw_gid) == -1 || seteuid(nobody_u->pw_uid) == -1)
@@ -206,12 +203,7 @@ void setup(void)
 			 strerror(errno));
 
 	/* Open the test directory for reading */
-	fd = open(TESTDIR, O_RDONLY);
-	if (fd == -1) {
-		tst_brkm(TBROK, cleanup,
-			 "open(%s, O_RDONLY) failed, errno=%d : %s",
-			 TESTDIR, errno, strerror(errno));
-	}
+	fd = SAFE_OPEN(cleanup, TESTDIR, O_RDONLY);
 }
 
 /*
@@ -226,11 +218,7 @@ void cleanup(void)
 {
 
 	/* Close the test directory opened in the setup() */
-	if (close(fd) == -1) {
-		tst_brkm(TBROK, NULL,
-			 "close(%s) Failed, errno=%d : %s",
-			 TESTDIR, errno, strerror(errno));
-	}
+	SAFE_CLOSE(NULL, fd);
 
 	setegid(0);
 	seteuid(0);

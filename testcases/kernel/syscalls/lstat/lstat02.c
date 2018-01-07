@@ -111,7 +111,7 @@ static void setup(void)
 	int i;
 	struct passwd *ltpuser;
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
@@ -124,8 +124,7 @@ static void setup(void)
 
 	SAFE_MKDIR(cleanup, TEST_DIR, MODE_RWX);
 	SAFE_TOUCH(cleanup, TEST_EACCES, 0666, NULL);
-	if (chmod(TEST_DIR, FILE_MODE) < 0)
-		tst_brkm(TBROK, cleanup, "chmod(2) of %s failed", TEST_DIR);
+	SAFE_CHMOD(cleanup, TEST_DIR, FILE_MODE);
 
 	SAFE_TOUCH(cleanup, "test_file", MODE_RWX, NULL);
 

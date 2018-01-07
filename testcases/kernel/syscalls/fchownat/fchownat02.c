@@ -26,7 +26,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <error.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -76,7 +75,7 @@ static void setup(void)
 	if ((tst_kvercmp(2, 6, 16)) < 0)
 		tst_brkm(TCONF, NULL, "This test needs kernel 2.6.16 or newer");
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 

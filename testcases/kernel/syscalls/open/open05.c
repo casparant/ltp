@@ -115,7 +115,7 @@ static void setup(void)
 {
 	struct passwd *pw;
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	pw = SAFE_GETPWNAM(NULL, "nobody");
 	nobody_uid = pw->pw_uid;
@@ -129,9 +129,7 @@ static void setup(void)
 
 	sprintf(fname, "file.%d", getpid());
 
-	fd = open(fname, O_RDWR | O_CREAT, 0700);
-	if (fd == -1)
-		tst_brkm(TBROK, cleanup, "open() failed, errno: %d", errno);
+	fd = SAFE_OPEN(cleanup, fname, O_RDWR | O_CREAT, 0700);
 }
 
 static void cleanup(void)

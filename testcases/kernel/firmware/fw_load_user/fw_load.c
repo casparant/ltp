@@ -30,7 +30,7 @@
 
 #include "test.h"
 #include "safe_macros.h"
-#include "tst_module.h"
+#include "old_module.h"
 
 /* number of test firmware files */
 #define FW_FILES	5
@@ -112,7 +112,7 @@ void setup(int argc, char *argv[])
 			tst_brkm(TBROK, NULL, "-n option arg is less than 0");
 	}
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	if (tst_kvercmp(3, 7, 0) < 0) {
 		tst_brkm(TCONF, NULL,

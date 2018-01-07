@@ -73,13 +73,14 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
 #include <pwd.h>
 
 #include "test.h"
+#include "safe_macros.h"
 
 #define FILE_MODE       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
 #define PERMS		01777	/*
@@ -144,13 +145,11 @@ void setup(void)
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 	ltpuser = getpwnam(nobody_uid);
 	if (ltpuser == NULL)
 		tst_brkm(TBROK | TERRNO, NULL, "getpwnam failed");
-	if (setuid(ltpuser->pw_uid) == -1)
-		tst_brkm(TBROK | TERRNO, NULL, "setuid(%u) failed",
-			 ltpuser->pw_uid);
+	SAFE_SETUID(NULL, ltpuser->pw_uid);
 
 	TEST_PAUSE;
 
@@ -167,9 +166,7 @@ void setup(void)
 			 TESTFILE, FILE_MODE);
 	}
 
-	if (close(fd) == -1) {
-		tst_brkm(TBROK | TERRNO, cleanup, "close(%s) failed", TESTFILE);
-	}
+	SAFE_CLOSE(cleanup, fd);
 }
 
 /*

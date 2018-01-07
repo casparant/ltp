@@ -12,7 +12,7 @@ in this document.
 
 Changelog:
 
- * Initial version: Garrett Cooper <yanegomi@gmail.com>
+ * Initial version: Ngie Cooper <yaneurabeya@gmail.com>
  * Reformatted for asciidoc: Cyril Hrubis <chrubis@suse.cz>
 **********************************************************************
 
@@ -31,7 +31,7 @@ When you can use libltp please observe the following guidelines:
 No, only use libltp in non-forked processes and functions +perror(3)+ /
 +exit(3)+ otherwise. Reason being:
 
- * Calling +tst_res()+ from multiple processes is messy.
+ * Calling +tst_resm()+ from multiple processes is messy.
  * Calling cleanup can break test execution.
  * Establishing a complicated scheme of tracking the testcase state
    for teardown is undesirable.
@@ -79,7 +79,7 @@ exec'ing and descriptor inheritance, etc.
 4. Call APIs that don't require freeing up resources on failure first
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- * +tst_require_root(NULL)+
+ * +tst_require_root()+
  * +tst_sig(...)+
  * +malloc(3)+
  * +tst_tmpdir()+
@@ -91,7 +91,7 @@ possible!
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If the test need to run as root, check to make sure that you're root
-*before doing any other setup* via +tst_require_root(...)+.
+*before doing any other setup* via +tst_require_root()+.
 
 6. No custom reporting APIs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,7 +109,7 @@ the testcase occurred.
 8. Don't roll your own syscall numbers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Header +linux_syscall_numbers.h+ exists for this purpose and does a pretty
+Header +lapi/syscalls.h+ exists for this purpose and does a pretty
 dang good job.
 
 9. Keep errors as short and sweet as possible
@@ -137,7 +137,7 @@ failure may be impossible.
 10. Reporting errno and the TEST() macro
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Don't roll your own +errno+ / +strerror()+ printout when you use +tst_res()+
+Don't roll your own +errno+ / +strerror()+ printout when you use +tst_resm()+
 calls. Use either +TERRNO+ or +TTERRNO+. Similarly, if a testcase passed and
 it's obvious why it passed (for example a function call returns +0+ or
 +TEST_RETURN == 0+).
@@ -206,7 +206,7 @@ in order to call +tst_exit()+.
 
 Use hard tabs for first-level indentation, and 4 spaces for every line longer
 than 80 columns. Use a linebreak with string constants in format functions
-like +*printf()+, the +tst_res()+ APIs, etc.
+like +*printf()+, the +tst_resm()+ APIs, etc.
 
 Example:
 [source,c]
@@ -317,7 +317,7 @@ The only exception to this is when you define global variables.
 
 Your testcase should be runnable as root and non-root. What does that mean? It
 should fail gracefully as non-root if it has insufficient privileges, or use
-+tst_require_root(NULL)+ if root access is absolutely required.
++tst_require_root()+ if root access is absolutely required.
 
 A lot of newer testcases don't honor this fact and it causes random
 unnecessary errors when run as non-privileged users.
@@ -358,7 +358,7 @@ static void setup(void)
 {
 	/* ... */
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_tmpdir();
 

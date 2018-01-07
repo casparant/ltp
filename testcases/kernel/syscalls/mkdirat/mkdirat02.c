@@ -86,7 +86,7 @@ static void setup(void)
 	int i;
 	const char *fs_type;
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
@@ -116,20 +116,15 @@ static void setup(void)
 	for (i = 0; i < 43; i++)
 		strcat(test_file2, "/test_eloop");
 
-	tst_mkfs(cleanup, device, fs_type, NULL);
+	tst_mkfs(cleanup, device, fs_type, NULL, NULL);
 
 	SAFE_MKDIR(cleanup, "test_dir/mntpoint", DIR_MODE);
-	if (mount(device, "test_dir/mntpoint", fs_type, MS_RDONLY, NULL) < 0) {
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "mount device:%s failed", device);
-	}
+	SAFE_MOUNT(cleanup, device, "test_dir/mntpoint", fs_type, MS_RDONLY,
+		   NULL);
 	mount_flag_dir = 1;
 
 	SAFE_MKDIR(cleanup, "mntpoint", DIR_MODE);
-	if (mount(device, "mntpoint", fs_type, MS_RDONLY, NULL) < 0) {
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "mount device:%s failed", device);
-	}
+	SAFE_MOUNT(cleanup, device, "mntpoint", fs_type, MS_RDONLY, NULL);
 	mount_flag_cur = 1;
 }
 
@@ -161,7 +156,7 @@ static void cleanup(void)
 		tst_resm(TWARN | TERRNO, "umount device:%s failed", device);
 
 	if (device)
-		tst_release_device(NULL, device);
+		tst_release_device(device);
 
 	tst_rmdir();
 }

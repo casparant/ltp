@@ -48,9 +48,10 @@
  */
 #include <unistd.h>
 #include <signal.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <errno.h>
 #include "test.h"
+#include "safe_macros.h"
 
 #define	PIPEWRTCNT	100	/* must be an even number */
 
@@ -60,7 +61,7 @@ int TST_TOTAL = 1;
 void setup(void);
 void cleanup(void);
 
-ssize_t safe_read(int fd, void *buf, size_t count)
+ssize_t do_read(int fd, void *buf, size_t count)
 {
 	ssize_t n;
 
@@ -119,8 +120,7 @@ int main(int ac, char **av)
 
 		/* parent */
 
-		if (waitpid(fork_1, &wtstatus, 0) == -1)
-			tst_brkm(TBROK, cleanup, "waitpid failed");
+		SAFE_WAITPID(cleanup, fork_1, &wtstatus, 0);
 		if (WIFEXITED(wtstatus) && WEXITSTATUS(wtstatus) != 0) {
 			tst_brkm(TBROK, cleanup, "child exited abnormally");
 		}
@@ -146,8 +146,7 @@ int main(int ac, char **av)
 
 		/* parent */
 
-		if (waitpid(fork_2, &wtstatus, 0) == -1)
-			tst_brkm(TBROK, cleanup, "waitpid failed");
+		SAFE_WAITPID(cleanup, fork_2, &wtstatus, 0);
 		if (WEXITSTATUS(wtstatus) != 0) {
 			tst_brkm(TBROK, cleanup, "problem detected in child, "
 				 "wait status %d, errno = %d", wtstatus, errno);
@@ -158,7 +157,7 @@ int main(int ac, char **av)
 				 "pipefd[1] close failed");
 		}
 
-		while ((red = safe_read(pipefd[0], rebuf, 100)) > 0) {
+		while ((red = do_read(pipefd[0], rebuf, 100)) > 0) {
 			for (i = 0; i < red; i++) {
 				if (rebuf[i] == 'A') {
 					Acnt++;

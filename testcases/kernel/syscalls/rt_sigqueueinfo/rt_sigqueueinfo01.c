@@ -49,7 +49,7 @@
 #include <string.h>
 
 #include "test.h"
-#include "linux_syscall_numbers.h"
+#include "lapi/syscalls.h"
 
 char *TCID = "rt_sigqueueinfo01";
 int testno;
@@ -68,7 +68,7 @@ void setup(void)
 	tst_tmpdir();
 }
 
-int main(int ac, char **av)
+int main(void)
 {
 	int status;
 	pid_t pid;

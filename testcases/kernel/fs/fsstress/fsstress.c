@@ -32,9 +32,11 @@
 
 #include "config.h"
 #include "global.h"
+#include <tst_common.h>
 #ifdef HAVE_SYS_PRCTL_H
 # include <sys/prctl.h>
 #endif
+#include <limits.h>
 
 #define XFS_ERRTAG_MAX		17
 
@@ -311,7 +313,7 @@ int main(int argc, char **argv)
 
 	errrange = errtag = 0;
 	umask(0);
-	nops = sizeof(ops) / sizeof(ops[0]);
+	nops = ARRAY_SIZE(ops);
 	ops_end = &ops[nops];
 	myprog = argv[0];
 	while ((c = getopt(argc, argv, "cd:e:f:i:l:n:p:rs:vwzHSX")) != -1) {
@@ -1066,7 +1068,7 @@ void namerandpad(int id, char *buf, int i)
 
 	if (namerand == 0)
 		return;
-	bucket = (id ^ namerand) % (sizeof(buckets) / sizeof(buckets[0]));
+	bucket = (id ^ namerand) % ARRAY_SIZE(buckets);
 	padmod = buckets[bucket] + 1 - i;
 	if (padmod <= 0)
 		return;
@@ -1140,7 +1142,9 @@ int readlink_path(pathname_t * name, char *lbuf, size_t lbufsiz)
 	pathname_t newname;
 	int rval;
 
-	rval = readlink(name->path, lbuf, lbufsiz);
+	rval = readlink(name->path, lbuf, lbufsiz-1);
+	if (rval >= 0)
+		lbuf[rval] = '\0';
 	if (rval >= 0 || errno != ENAMETOOLONG)
 		return rval;
 	separate_pathname(name, buf, &newname);
@@ -1548,7 +1552,7 @@ void attr_set_f(int opno, long r)
 	if (!get_fname(FT_ANYm, r, &f, NULL, NULL, &v))
 		append_pathname(&f, ".");
 	sprintf(aname, "a%x", nameseq++);
-	li = (int)(random() % (sizeof(lengths) / sizeof(lengths[0])));
+	li = (int)(random() % ARRAY_SIZE(lengths));
 	len = (int)(random() % lengths[li]);
 	if (len == 0)
 		len = 1;
@@ -1571,7 +1575,7 @@ void bulkstat_f(int opno, long r)
 	__u64 last;
 	__s32 nent;
 	xfs_bstat_t *t;
-	__int64_t total;
+	int64_t total;
 	xfs_fsop_bulkreq_t bsr;
 
 	last = 0;
@@ -1763,14 +1767,14 @@ int setdirect(int fd)
 
 void dread_f(int opno, long r)
 {
-	__int64_t align;
+	int64_t align;
 	char *buf = NULL;
 	struct dioattr diob;
 	int e;
 	pathname_t f;
 	int fd;
 	size_t len;
-	__int64_t lr;
+	int64_t lr;
 	off64_t off;
 	struct stat64 stb;
 	int v;
@@ -1834,8 +1838,8 @@ void dread_f(int opno, long r)
 		return;
 	}
 #endif
-	align = (__int64_t) diob.d_miniosz;
-	lr = ((__int64_t) random() << 32) + random();
+	align = (int64_t) diob.d_miniosz;
+	lr = ((int64_t) random() << 32) + random();
 	off = (off64_t) (lr % stb.st_size);
 	off -= (off % align);
 	lseek64(fd, off, SEEK_SET);
@@ -1864,14 +1868,14 @@ void dread_f(int opno, long r)
 
 void dwrite_f(int opno, long r)
 {
-	__int64_t align;
+	int64_t align;
 	char *buf = NULL;
 	struct dioattr diob;
 	int e;
 	pathname_t f;
 	int fd;
 	size_t len;
-	__int64_t lr;
+	int64_t lr;
 	off64_t off;
 	struct stat64 stb;
 	int v;
@@ -1924,8 +1928,8 @@ void dwrite_f(int opno, long r)
 		return;
 	}
 #endif
-	align = (__int64_t) diob.d_miniosz;
-	lr = ((__int64_t) random() << 32) + random();
+	align = (int64_t) diob.d_miniosz;
+	lr = ((int64_t) random() << 32) + random();
 	off = (off64_t) (lr % MIN(stb.st_size + (1024 * 1024), MAXFSIZE));
 	off -= (off % align);
 	lseek64(fd, off, SEEK_SET);
@@ -2223,7 +2227,7 @@ void read_f(int opno, long r)
 	pathname_t f;
 	int fd;
 	size_t len;
-	__int64_t lr;
+	int64_t lr;
 	off64_t off;
 	struct stat64 stb;
 	int v;
@@ -2261,7 +2265,7 @@ void read_f(int opno, long r)
 		close(fd);
 		return;
 	}
-	lr = ((__int64_t) random() << 32) + random();
+	lr = ((int64_t) random() << 32) + random();
 	off = (off64_t) (lr % stb.st_size);
 	lseek64(fd, off, SEEK_SET);
 	len = (random() % (getpagesize() * 32)) + 1;
@@ -2508,7 +2512,7 @@ void truncate_f(int opno, long r)
 {
 	int e;
 	pathname_t f;
-	__int64_t lr;
+	int64_t lr;
 	off64_t off;
 	struct stat64 stb;
 	int v;
@@ -2529,7 +2533,7 @@ void truncate_f(int opno, long r)
 		free_pathname(&f);
 		return;
 	}
-	lr = ((__int64_t) random() << 32) + random();
+	lr = ((int64_t) random() << 32) + random();
 	off = lr % MIN(stb.st_size + (1024 * 1024), MAXFSIZE);
 	off %= maxfsize;
 	e = truncate64_path(&f, off) < 0 ? errno : 0;
@@ -2625,7 +2629,7 @@ void write_f(int opno, long r)
 	pathname_t f;
 	int fd;
 	size_t len;
-	__int64_t lr;
+	int64_t lr;
 	off64_t off;
 	struct stat64 stb;
 	int v;
@@ -2655,7 +2659,7 @@ void write_f(int opno, long r)
 		close(fd);
 		return;
 	}
-	lr = ((__int64_t) random() << 32) + random();
+	lr = ((int64_t) random() << 32) + random();
 	off = (off64_t) (lr % MIN(stb.st_size + (1024 * 1024), MAXFSIZE));
 	off %= maxfsize;
 	lseek64(fd, off, SEEK_SET);

@@ -26,7 +26,7 @@
 
 #include "test.h"
 #include "ltp_priv.h"
-#include "tst_module.h"
+#include "old_module.h"
 
 void tst_module_exists(void (cleanup_fn)(void),
 	const char *mod_name, char **mod_path)
@@ -47,6 +47,7 @@ void tst_module_exists(void (cleanup_fn)(void),
 			tst_brkm(TBROK | TERRNO, cleanup_fn,
 				"asprintf failed at %s:%d",
 				__FILE__, __LINE__);
+			return;
 		}
 		err = access(buf, F_OK);
 	}
@@ -58,6 +59,7 @@ void tst_module_exists(void (cleanup_fn)(void),
 			tst_brkm(TBROK | TERRNO, cleanup_fn,
 				"asprintf failed at %s:%d",
 				__FILE__, __LINE__);
+			return;
 		}
 		err = access(buf, F_OK);
 	}
@@ -66,6 +68,7 @@ void tst_module_exists(void (cleanup_fn)(void),
 		free(buf);
 		tst_brkm(TCONF, cleanup_fn, "Failed to find module '%s'",
 			mod_name);
+		return;
 	}
 
 	if (mod_path != NULL)

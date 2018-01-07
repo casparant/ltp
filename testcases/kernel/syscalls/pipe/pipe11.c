@@ -73,7 +73,7 @@ int pipewrcnt;			/* chars written to pipe */
 char *wrbuf, *rdbuf;
 int fd[2];			/* fds for pipe read/write */
 
-ssize_t safe_read(int fd, void *buf, size_t count)
+ssize_t do_read(int fd, void *buf, size_t count)
 {
 	ssize_t n;
 
@@ -146,10 +146,10 @@ refork:
 		for (i = 1; i <= kidid; ++i) {
 			wait(&status);
 			if (status == 0) {
-				tst_resm(TPASS, "child %d exitted successfully",
+				tst_resm(TPASS, "child %d exited successfully",
 					 i);
 			} else {
-				tst_resm(TFAIL, "child %d exitted with bad "
+				tst_resm(TFAIL, "child %d exited with bad "
 					 "status", i);
 			}
 		}
@@ -170,7 +170,7 @@ void do_child(void)
 		tst_resm(TINFO, "child %d " "could not close pipe", kidid);
 		exit(0);
 	}
-	nread = safe_read(fd[0], rdbuf, ncperchild);
+	nread = do_read(fd[0], rdbuf, ncperchild);
 	if (nread == ncperchild) {
 		tst_resm(TINFO, "child %d " "got %d chars", kidid, nread);
 		exit(0);

@@ -17,7 +17,7 @@
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Garrett Cooper, July 2009
+# Ngie Cooper, July 2009
 #
 
 # See this page for more info about LEX*:
@@ -41,11 +41,11 @@ CAP_LIBS		:= @CAP_LIBS@
 ACL_LIBS		:= @ACL_LIBS@
 CRYPTO_LIBS		:= @CRYPTO_LIBS@
 LEXLIB			:= @LEXLIB@
-NUMA_CPPFLAGS		:= @NUMA_CPPFLAGS@
 NUMA_LIBS		:= @NUMA_LIBS@
 SELINUX_LIBS		:= @SELINUX_LIBS@
 TIRPC_CPPFLAGS		:= @TIRPC_CPPFLAGS@
 TIRPC_LIBS		:= @TIRPC_LIBS@
+KEYUTILS_LIBS		:= @KEYUTILS_LIBS@
 
 prefix			:= @prefix@
 

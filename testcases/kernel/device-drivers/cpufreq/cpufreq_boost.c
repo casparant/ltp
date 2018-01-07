@@ -34,7 +34,6 @@
 #include "test.h"
 #include "lapi/posix_clocks.h"
 #include "safe_macros.h"
-#include "safe_stdio.h"
 
 char *TCID = "cpufreq_boost";
 
@@ -72,7 +71,7 @@ static void setup(void)
 {
 	int fd;
 	unsigned int i;
-	tst_require_root(NULL);
+	tst_require_root();
 
 	for (i = 0; i < ARRAY_SIZE(cdrv); ++i) {
 		fd = open(cdrv[i].file, O_RDWR);

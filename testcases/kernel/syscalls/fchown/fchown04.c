@@ -99,7 +99,7 @@ static void setup(void)
 
 	TEST_PAUSE;
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_tmpdir();
 
@@ -113,19 +113,13 @@ static void setup(void)
 
 	fd1 = SAFE_OPEN(cleanup, "tfile_1", O_RDWR | O_CREAT, 0666);
 
-	tst_mkfs(cleanup, device, fs_type, NULL);
+	tst_mkfs(cleanup, device, fs_type, NULL, NULL);
 	SAFE_MKDIR(cleanup, "mntpoint", DIR_MODE);
-	if (mount(device, "mntpoint", fs_type, 0, NULL) < 0) {
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "mount device:%s failed", device);
-	}
+	SAFE_MOUNT(cleanup, device, "mntpoint", fs_type, 0, NULL);
 	mount_flag = 1;
 	SAFE_TOUCH(cleanup, "mntpoint/tfile_3", 0644, NULL);
-	if (mount(device, "mntpoint", fs_type,
-		  MS_REMOUNT | MS_RDONLY, NULL) < 0) {
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "mount device:%s failed", device);
-	}
+	SAFE_MOUNT(cleanup, device, "mntpoint", fs_type,
+		   MS_REMOUNT | MS_RDONLY, NULL);
 	fd3 = SAFE_OPEN(cleanup, "mntpoint/tfile_3", O_RDONLY);
 
 	ltpuser = SAFE_GETPWNAM(cleanup, "nobody");
@@ -168,7 +162,7 @@ static void cleanup(void)
 		tst_resm(TWARN | TERRNO, "umount device:%s failed", device);
 
 	if (device)
-		tst_release_device(NULL, device);
+		tst_release_device(device);
 
 	tst_rmdir();
 }

@@ -79,6 +79,7 @@
 #include <ctype.h>
 #include <sys/mman.h>
 #include "test.h"
+#include "safe_macros.h"
 #include <sys/resource.h>
 #include <sys/utsname.h>
 
@@ -183,6 +184,8 @@ int main(int ac, char **av)
 void setup(void)
 {
 
+	tst_require_root();
+
 	tst_sig(FORK, DEF_HANDLER, cleanup);
 
 	TEST_PAUSE;
@@ -265,11 +268,7 @@ void cleanup_test(int i)
 
 	switch (i) {
 	case 0:
-		if (seteuid(0) == -1) {
-			tst_brkm(TBROK, cleanup, "seteuid() failed to "
-				 "change euid to %d errno = %d : %s",
-				 0, TEST_ERRNO, strerror(TEST_ERRNO));
-		}
+		SAFE_SETEUID(cleanup, 0);
 
 		rl.rlim_max = -1;
 		rl.rlim_cur = -1;
@@ -285,11 +284,7 @@ void cleanup_test(int i)
 		return;
 
 	case 1:
-		if (seteuid(0) == -1) {
-			tst_brkm(TBROK, cleanup, "seteuid() failed to "
-				 "change euid to %d errno = %d : %s",
-				 0, TEST_ERRNO, strerror(TEST_ERRNO));
-		}
+		SAFE_SETEUID(cleanup, 0);
 		return;
 
 	}

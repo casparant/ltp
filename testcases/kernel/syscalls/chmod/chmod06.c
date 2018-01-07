@@ -167,7 +167,7 @@ void setup(void)
 
 	tst_sig(FORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	TEST_PAUSE;
 
@@ -192,17 +192,14 @@ void setup(void)
 	SAFE_CHMOD(cleanup, DIR_TEMP, FILE_MODE);
 	SAFE_TOUCH(cleanup, "t_file", MODE_RWX, NULL);
 
-	tst_mkfs(cleanup, device, fs_type, NULL);
+	tst_mkfs(cleanup, device, fs_type, NULL, NULL);
 
 	SAFE_MKDIR(cleanup, MNT_POINT, DIR_MODE);
 
 	/*
 	 * mount a read-only file system for test EROFS
 	 */
-	if (mount(device, MNT_POINT, fs_type, MS_RDONLY, NULL) < 0) {
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "mount device:%s failed", device);
-	}
+	SAFE_MOUNT(cleanup, device, MNT_POINT, fs_type, MS_RDONLY, NULL);
 	mount_flag = 1;
 
 	memset(long_path, 'a', PATH_MAX+1);
@@ -226,7 +223,7 @@ static void cleanup(void)
 	}
 
 	if (device)
-		tst_release_device(NULL, device);
+		tst_release_device(device);
 
 	tst_rmdir();
 }

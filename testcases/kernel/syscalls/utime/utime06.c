@@ -44,7 +44,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <utime.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/mount.h>
@@ -106,7 +106,7 @@ static void setup(void)
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	TEST_PAUSE;
 
@@ -119,13 +119,10 @@ static void setup(void)
 	if (!dev)
 		tst_brkm(TCONF, cleanup, "Failed to acquire test device");
 
-	tst_mkfs(cleanup, dev, fs_type, NULL);
+	tst_mkfs(cleanup, dev, fs_type, NULL, NULL);
 
 	SAFE_MKDIR(cleanup, MNT_POINT, 0644);
-	if (mount(dev, MNT_POINT, fs_type, MS_RDONLY, NULL) < 0) {
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "mount device:%s failed", dev);
-	}
+	SAFE_MOUNT(cleanup, dev, MNT_POINT, fs_type, MS_RDONLY, NULL);
 	mount_flag = 1;
 
 	ltpuser = SAFE_GETPWNAM(cleanup, "nobody");
@@ -171,7 +168,7 @@ static void cleanup(void)
 		tst_resm(TWARN | TERRNO, "umount device:%s failed", dev);
 
 	if (dev)
-		tst_release_device(NULL, dev);
+		tst_release_device(dev);
 
 	tst_rmdir();
 }

@@ -37,8 +37,7 @@
 #include <string.h>
 #include <signal.h>
 #include "test.h"
-#include "linux_syscall_numbers.h"
-#include "tst_fs_type.h"
+#include "lapi/syscalls.h"
 #include "swaponoff.h"
 #include "libswapon.h"
 
@@ -327,7 +326,7 @@ static void setup(void)
 {
 	tst_sig(FORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_tmpdir();
 

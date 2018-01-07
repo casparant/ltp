@@ -37,7 +37,7 @@
 #include <string.h>
 
 #include "test.h"
-#include "linux_syscall_numbers.h"
+#include "lapi/syscalls.h"
 #include "lapi/rt_sigaction.h"
 
 char *TCID = "rt_sigaction01";
@@ -99,8 +99,7 @@ int main(int ac, char **av)
 			for (signal = SIGRTMIN; signal <= SIGRTMAX; signal++) {
 				for (flag = 0;
 				     flag <
-				     (sizeof(test_flags) /
-				      sizeof(test_flags[0])); flag++) {
+				      ARRAY_SIZE(test_flags); flag++) {
 
 					TEST(set_handler
 					     (signal, 0, test_flags[flag]));

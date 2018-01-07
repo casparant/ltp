@@ -50,7 +50,7 @@
 
 #include "test.h"
 #include "safe_macros.h"
-#include "linux_syscall_numbers.h"
+#include "lapi/syscalls.h"
 
 #define MNTPOINT "mntpoint"
 #define TESTFILE1 "testfile1"
@@ -115,7 +115,7 @@ static void setup(void)
 	struct passwd *ltpuser;
 	const char *fs_type;
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
@@ -139,22 +139,16 @@ static void setup(void)
 	SAFE_CHOWN(cleanup, TESTFILE2, ltpuser->pw_uid,
 		ltpuser->pw_gid);
 
-	tst_mkfs(cleanup, device, fs_type, NULL);
+	tst_mkfs(cleanup, device, fs_type, NULL, NULL);
 	SAFE_MKDIR(cleanup, MNTPOINT, DIR_MODE);
-	if (mount(device, MNTPOINT, fs_type, 0, NULL) == -1) {
-		tst_brkm(TBROK | TERRNO, cleanup,
-			"mount device:%s failed", device);
-	}
+	SAFE_MOUNT(cleanup, device, MNTPOINT, fs_type, 0, NULL);
 	mount_flag = 1;
 	SAFE_TOUCH(cleanup, TESTFILE3, FILE_MODE, NULL);
 	ltpuser = SAFE_GETPWNAM(cleanup, LTPUSER1);
 	SAFE_CHOWN(cleanup, TESTFILE3, ltpuser->pw_uid,
 		ltpuser->pw_gid);
-	if (mount(device, MNTPOINT, fs_type,
-			MS_REMOUNT | MS_RDONLY, NULL) == -1) {
-		tst_brkm(TBROK | TERRNO, cleanup,
-			"mount device:%s failed", device);
-	}
+	SAFE_MOUNT(cleanup, device, MNTPOINT, fs_type, MS_REMOUNT | MS_RDONLY,
+		   NULL);
 
 	ltpuser = SAFE_GETPWNAM(cleanup, LTPUSER1);
 	SAFE_SETEUID(cleanup, ltpuser->pw_uid);
@@ -198,7 +192,7 @@ static void cleanup(void)
 
 
 	if (device)
-		tst_release_device(NULL, device);
+		tst_release_device(device);
 
 	tst_rmdir();
 }

@@ -70,9 +70,10 @@
  *****************************************************************************/
 
 #include <errno.h>
-#include <syscall.h>
+#include <sys/syscall.h>
 #include <sys/mman.h>
 #include "test.h"
+#include "lapi/syscalls.h"
 
 static void setup();
 static void cleanup();
@@ -104,14 +105,12 @@ int main(int ac, char **av)
 
 	setup();
 
-#ifdef __NR_sysfs
-
 	for (lc = 0; TEST_LOOPING(lc); lc++) {
 
 		for (i = 0; i < TST_TOTAL; i++) {
 
 			tst_count = 0;
-			TEST(syscall
+			TEST(ltp_syscall
 			     (__NR_sysfs, option[i], fsindex[i], bad_addr));
 
 			/* check return code */
@@ -131,10 +130,6 @@ int main(int ac, char **av)
 			}
 		}		/*End of TEST LOOPS */
 	}
-#else
-	tst_resm(TWARN,
-		 "This test can only run on kernels that support the sysfs system call");
-#endif
 
 	/*Clean up and exit */
 	cleanup();

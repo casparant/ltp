@@ -39,6 +39,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 
 #include "test.h"
 #include "safe_macros.h"
@@ -66,6 +67,7 @@ int TST_TOTAL = ARRAY_SIZE(tcases);
 int main(int ac, char **av)
 {
 	int lc, i;
+	dev_t dev;
 
 	tst_parse_opts(ac, av, NULL, NULL);
 
@@ -75,17 +77,25 @@ int main(int ac, char **av)
 		tst_count = 0;
 
 		for (i = 0; i < TST_TOTAL; i++) {
-			TEST(mknod(PATH, tcases[i], 0));
+			/*
+			 * overlayfs doesn't support mknod char device with
+			 * major 0 and minor 0, which is known as whiteout_dev
+			 */
+			if (S_ISCHR(tcases[i]))
+				dev = makedev(1, 3);
+			else
+				dev = 0;
+			TEST(mknod(PATH, tcases[i], dev));
 
 			if (TEST_RETURN == -1) {
 				tst_resm(TFAIL,
-					 "mknod(%s, %#o, 0) failed, errno=%d : %s",
-					 PATH, tcases[i], TEST_ERRNO,
+					 "mknod(%s, %#o, %lu) failed, errno=%d : %s",
+					 PATH, tcases[i], dev, TEST_ERRNO,
 					 strerror(TEST_ERRNO));
 			} else {
 				tst_resm(TPASS,
-					 "mknod(%s, %#o, 0) returned %ld",
-					 PATH, tcases[i], TEST_RETURN);
+					 "mknod(%s, %#o, %lu) returned %ld",
+					 PATH, tcases[i], dev, TEST_RETURN);
 			}
 
 			SAFE_UNLINK(cleanup, PATH);
@@ -99,7 +109,7 @@ int main(int ac, char **av)
 
 void setup(void)
 {
-	tst_require_root(NULL);
+	tst_require_root();
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
 	TEST_PAUSE;

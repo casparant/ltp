@@ -109,11 +109,12 @@
  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#**/
 
 #include <sys/types.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
 #include "test.h"
+#include "safe_macros.h"
 
 void setup();
 void cleanup();
@@ -152,9 +153,7 @@ int main(int ac, char **av)
 			} else {
 				tst_resm(TFAIL, "dup succeeded unexpectedly");
 
-				if (close(TEST_RETURN) == -1)
-					tst_brkm(TBROK | TERRNO, cleanup,
-						 "close failed");
+				SAFE_CLOSE(cleanup, TEST_RETURN);
 			}
 		}
 	}

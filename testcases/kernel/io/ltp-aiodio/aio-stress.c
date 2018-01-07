@@ -50,18 +50,22 @@
 #include <errno.h>
 #include <assert.h>
 #include <stdlib.h>
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include <libaio.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
 #include <string.h>
 #include <pthread.h>
+
+#include "config.h"
+#include "tst_res_flags.h"
+
+#ifdef HAVE_LIBAIO
+#include <libaio.h>
 
 #define IO_FREE 0
 #define IO_PENDING 1
@@ -991,12 +995,9 @@ int setup_ious(struct thread_info *t,
 	return 0;
 
 free_buffers:
-	if (t->ios)
-		free(t->ios);
-	if (t->iocbs)
-		free(t->iocbs);
-	if (t->events)
-		free(t->events);
+	free(t->ios);
+	free(t->iocbs);
+	free(t->events);
 	return -1;
 }
 
@@ -1456,6 +1457,7 @@ int main(int ac, char **av)
 		perror("malloc");
 		exit(1);
 	}
+	memset(t, 0, num_threads * sizeof(*t));
 	global_thread_info = t;
 
 	/* by default, allow a huge number of iocbs to be sent towards
@@ -1559,3 +1561,10 @@ int main(int ac, char **av)
 	}
 	return status;
 }
+#else
+int main(void)
+{
+	fprintf(stderr, "test requires libaio and it's development packages\n");
+	return TCONF;
+}
+#endif

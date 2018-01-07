@@ -41,6 +41,7 @@
 #include <sys/wait.h>
 #include <errno.h>
 #include <signal.h>
+#include <limits.h>
 #include "config.h"
 #include "test.h"
 #include "safe_macros.h"
@@ -212,7 +213,7 @@ int main(int argc, char *argv[])
 
 static void setup(void)
 {
-	tst_require_root(NULL);
+	tst_require_root();
 	tst_tmpdir();
 
 	sem_id = semget(IPC_PRIVATE, 1, IPC_CREAT | S_IRWXU);

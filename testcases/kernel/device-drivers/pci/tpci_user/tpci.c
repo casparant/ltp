@@ -28,7 +28,7 @@
 
 #include "test.h"
 #include "safe_macros.h"
-#include "tst_module.h"
+#include "old_module.h"
 
 #include "../tpci_kernel/tpci.h"
 
@@ -49,7 +49,7 @@ static void cleanup(void)
 
 void setup(int argc, char *argv[])
 {
-	tst_require_root(NULL);
+	tst_require_root();
 
 	if (tst_kvercmp(2, 6, 0) < 0) {
 		tst_brkm(TCONF, NULL,

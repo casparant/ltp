@@ -31,11 +31,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/signal.h>
-#include <sys/ioctl.h>
 
 #include <netinet/in.h>
 
 #include "test.h"
+#include "safe_macros.h"
 
 char *TCID = "accept01";
 int testno;
@@ -156,15 +156,9 @@ static void cleanup0(void)
 
 static void setup1(void)
 {
-	s = socket(tdat[testno].domain, tdat[testno].type, tdat[testno].proto);
-	if (s < 0) {
-		tst_brkm(TBROK, cleanup, "socket setup failed for accept "
-			 "test %d: %s", testno, strerror(errno));
-	}
-	if (bind(s, (struct sockaddr *)&sin0, sizeof(sin0)) < 0) {
-		tst_brkm(TBROK, cleanup, "socket bind failed for accept "
-			 "test %d: %s", testno, strerror(errno));
-	}
+	s = SAFE_SOCKET(cleanup, tdat[testno].domain, tdat[testno].type,
+			tdat[testno].proto);
+	SAFE_BIND(cleanup, s, (struct sockaddr *)&sin0, sizeof(sin0));
 	sinlen = sizeof(fsin1);
 }
 
@@ -185,8 +179,5 @@ static void setup3(void)
 	int one = 1;
 
 	setup1();
-	if (ioctl(s, FIONBIO, &one) < 0) {
-		tst_brkm(TBROK, cleanup, "socket ioctl failed for accept "
-			 "test %d: %s", testno, strerror(errno));
-	}
+	SAFE_IOCTL(cleanup, s, FIONBIO, &one);
 }

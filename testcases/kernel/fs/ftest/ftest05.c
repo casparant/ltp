@@ -61,7 +61,9 @@
 #include <signal.h>
 #include <unistd.h>
 #include <inttypes.h>
+#include <sys/param.h>
 #include "test.h"
+#include "safe_macros.h"
 #include "libftest.h"
 
 char *TCID = "ftest05";
@@ -136,9 +138,7 @@ static void setup(void)
 
 	mkdir(fuss, 0755);
 
-	if (chdir(fuss) < 0) {
-		tst_brkm(TBROK | TERRNO, NULL, "\tCan't chdir(%s)", fuss);
-	}
+	SAFE_CHDIR(NULL, fuss);
 
 	/*
 	 * Default values for run conditions.
@@ -166,12 +166,8 @@ static void runtest(void)
 	for (i = 0; i < nchild; i++) {
 		test_name[0] = 'a' + i;
 		test_name[1] = '\0';
-		fd = open(test_name, O_RDWR | O_CREAT | O_TRUNC, 0666);
-
-		if (fd < 0) {
-			tst_brkm(TBROK | TERRNO, NULL,
-				 "\tError creating %s/%s.", fuss, test_name);
-		}
+		fd = SAFE_OPEN(NULL, test_name, O_RDWR | O_CREAT | O_TRUNC,
+			       0666);
 
 		if ((child = fork()) == 0) {
 			dotest(nchild, i, fd);
@@ -264,6 +260,7 @@ static void dotest(int testers, int me, int fd)
 	int i, count, collide, chunk, whenmisc, xfr;
 	char *bits, *hold_bits, *buf, *val_buf, *zero_buf;
 	char val;
+	struct stat stat;
 
 	nchunks = max_size / csize;
 
@@ -362,8 +359,12 @@ static void dotest(int testers, int me, int fd)
 						 me, CHUNK(chunk), val, count,
 						 xfr, file_max, zero_buf[0]);
 					tst_resm(TINFO,
-						 "\tTest[%d]: last_trunc = 0x%x.",
+						 "\tTest[%d]: last_trunc = 0x%x",
 						 me, last_trunc);
+					fstat(fd, &stat);
+					tst_resm(TINFO,
+						 "\tStat: size=%llx, ino=%x",
+						 stat.st_size, (unsigned)stat.st_ino);
 					sync();
 					ft_dumpbuf(buf, csize);
 					ft_dumpbits(bits, (nchunks + 7) / 8);
@@ -389,8 +390,12 @@ static void dotest(int testers, int me, int fd)
 						 me, CHUNK(chunk), val, count,
 						 xfr, file_max);
 					tst_resm(TINFO,
-						 "\tTest[%d]: last_trunc = 0x%x.",
+						 "\tTest[%d]: last_trunc = 0x%x",
 						 me, last_trunc);
+					fstat(fd, &stat);
+					tst_resm(TINFO,
+						 "\tStat: size=%llx, ino=%x",
+						 stat.st_size, (unsigned)stat.st_ino);
 					sync();
 					ft_dumpbuf(buf, csize);
 					ft_dumpbits(bits, (nchunks + 7) / 8);

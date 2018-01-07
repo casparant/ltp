@@ -24,10 +24,10 @@
 #include <errno.h>
 #include <time.h>
 #include <signal.h>
-#include <syscall.h>
+#include <sys/syscall.h>
 
 #include "test.h"
-#include "linux_syscall_numbers.h"
+#include "lapi/syscalls.h"
 
 char *TCID = "timer_getoverrun01";
 int TST_TOTAL = 1;
@@ -54,7 +54,7 @@ int main(int ac, char **av)
 
 	setup();
 
-	ev.sigev_value = (sigval_t) 0;
+	ev.sigev_value = (union sigval) 0;
 	ev.sigev_signo = SIGALRM;
 	ev.sigev_notify = SIGEV_SIGNAL;
 	TEST(ltp_syscall(__NR_timer_create, CLOCK_REALTIME, &ev, &timer));

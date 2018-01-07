@@ -91,6 +91,7 @@
 #include <unistd.h>
 #include <pwd.h>
 #include "test.h"
+#include "safe_macros.h"
 
 #define SET_MODE ( ADJ_OFFSET | ADJ_FREQUENCY | ADJ_MAXERROR | ADJ_ESTERROR | \
 	ADJ_STATUS | ADJ_TIMECONST | ADJ_TICK )
@@ -198,17 +199,14 @@ int main(int ac, char **av)
 /* setup() - performs all ONE TIME setup for this test */
 void setup(void)
 {
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tim_save.modes = 0;
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
 	/* set the HZ from sysconf */
-	hz = sysconf(_SC_CLK_TCK);
-	if (hz == -1) {
-		tst_brkm(TBROK, NULL, "Failed to read the HZ from sysconf\n");
-	}
+	hz = SAFE_SYSCONF(NULL, _SC_CLK_TCK);
 
 	TEST_PAUSE;
 
@@ -272,8 +270,5 @@ int setup6(void)
 void cleanup6(void)
 {
 	/* Set effective user id back to root */
-	if (seteuid(0) == -1) {
-		tst_brkm(TBROK | TERRNO, cleanup, "seteuid failed to set the"
-			 " effective uid to root");
-	}
+	SAFE_SETEUID(cleanup, 0);
 }

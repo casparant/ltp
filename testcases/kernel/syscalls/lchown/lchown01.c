@@ -34,12 +34,13 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
 
 #include "test.h"
+#include "safe_macros.h"
 #include "compat_16.h"
 
 #define FILE_MODE	(S_IFREG|S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)
@@ -150,7 +151,7 @@ static void setup(void)
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	TEST_PAUSE;
 	tst_tmpdir();
@@ -158,13 +159,9 @@ static void setup(void)
 	if ((fd = open(TESTFILE, O_RDWR | O_CREAT, FILE_MODE)) == -1) {
 		tst_brkm(TBROK, cleanup, "open failed");
 	}
-	if (close(fd) == -1) {
-		tst_brkm(TBROK | TERRNO, cleanup, "close failed");
-	}
+	SAFE_CLOSE(cleanup, fd);
 
-	if (symlink(TESTFILE, SFILE) < 0) {
-		tst_brkm(TBROK | TERRNO, cleanup, "symlink failed");
-	}
+	SAFE_SYMLINK(cleanup, TESTFILE, SFILE);
 }
 
 static void cleanup(void)

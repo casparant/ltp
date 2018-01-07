@@ -44,16 +44,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_ATTR_XATTR_H
-#include <attr/xattr.h>
+#ifdef HAVE_SYS_XATTR_H
+# include <sys/xattr.h>
 #endif
 #include <linux/fs.h>
 
 #include "test.h"
+#include "safe_macros.h"
 
 char *TCID = "setxattr03";
 
-#if defined HAVE_ATTR_XATTR_H && defined HAVE_FS_IOC_FLAGS
+#if defined HAVE_SYS_XATTR_H && defined HAVE_FS_IOC_FLAGS
 #define XATTR_TEST_KEY "user.testkey"
 #define XATTR_TEST_VALUE "this is a test value"
 #define XATTR_TEST_VALUE_SIZE (sizeof(XATTR_TEST_VALUE) - 1)
@@ -162,14 +163,12 @@ static void setup(void)
 {
 	int fd;
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_tmpdir();
 
 	/* Test for xattr support */
-	fd = creat("testfile", 0644);
-	if (fd == -1)
-		tst_brkm(TBROK | TERRNO, cleanup, "Create testfile failed");
+	fd = SAFE_CREAT(cleanup, "testfile", 0644);
 	close(fd);
 	if (setxattr("testfile", "user.test", "test", 4, XATTR_CREATE) == -1)
 		if (errno == ENOTSUP)
@@ -178,18 +177,12 @@ static void setup(void)
 	unlink("testfile");
 
 	/* Create test files and set file immutable or append-only */
-	immu_fd = creat(IMMU_FILE, 0644);
-	if (immu_fd == -1)
-		tst_brkm(TBROK | TERRNO, cleanup, "Create test file(%s) failed",
-			 IMMU_FILE);
+	immu_fd = SAFE_CREAT(cleanup, IMMU_FILE, 0644);
 	if (set_immutable_on(immu_fd))
 		tst_brkm(TBROK | TERRNO, cleanup, "Set %s immutable failed",
 			 IMMU_FILE);
 
-	append_fd = creat(APPEND_FILE, 0644);
-	if (append_fd == -1)
-		tst_brkm(TBROK | TERRNO, cleanup, "Create test file(%s) failed",
-			 APPEND_FILE);
+	append_fd = SAFE_CREAT(cleanup, APPEND_FILE, 0644);
 	if (set_append_on(append_fd))
 		tst_brkm(TBROK | TERRNO, cleanup, "Set %s append-only failed",
 			 APPEND_FILE);
@@ -213,7 +206,7 @@ static void cleanup(void)
 #else
 int main(void)
 {
-	tst_brkm(TCONF, NULL, "<attr/xattr.h> not present or FS_IOC_FLAGS "
+	tst_brkm(TCONF, NULL, "<sys/xattr.h> not present or FS_IOC_FLAGS "
 		 "missing in <linux/fs.h>");
 }
-#endif /* defined HAVE_ATTR_XATTR_H && defined HAVE_FS_IOC_FLAGS */
+#endif /* defined HAVE_SYS_XATTR_H && defined HAVE_FS_IOC_FLAGS */

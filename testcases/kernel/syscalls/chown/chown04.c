@@ -138,7 +138,7 @@ static void setup(void)
 	struct passwd *ltpuser;
 	const char *fs_type;
 
-	tst_require_root(NULL);
+	tst_require_root();
 	tst_sig(FORK, DEF_HANDLER, cleanup);
 	ltpuser = SAFE_GETPWNAM(NULL, "nobody");
 
@@ -149,7 +149,7 @@ static void setup(void)
 	if (!device)
 		tst_brkm(TCONF, cleanup, "Failed to obtain block device");
 
-	tst_mkfs(cleanup, device, fs_type, NULL);
+	tst_mkfs(cleanup, device, fs_type, NULL, NULL);
 
 	TEST_PAUSE;
 
@@ -172,10 +172,7 @@ static void setup(void)
 	SAFE_TOUCH(cleanup, TEST_FILE2, 0666, NULL);
 
 	SAFE_MKDIR(cleanup, "mntpoint", DIR_MODE);
-	if (mount(device, "mntpoint", fs_type, MS_RDONLY, NULL) < 0) {
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "mount device:%s failed", device);
-	}
+	SAFE_MOUNT(cleanup, device, "mntpoint", fs_type, MS_RDONLY, NULL);
 	mount_flag = 1;
 
 	SAFE_SETEUID(cleanup, ltpuser->pw_uid);
@@ -192,7 +189,7 @@ void cleanup(void)
 	}
 
 	if (device)
-		tst_release_device(NULL, device);
+		tst_release_device(device);
 
 	tst_rmdir();
 }

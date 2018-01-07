@@ -62,13 +62,14 @@
 
 #include "../libcontrollers/libcontrollers.h"
 #include "test.h"		/* LTP harness APIs */
+#include "safe_macros.h"
 
 #define TIME_INTERVAL	30	/* Time interval in seconds */
 #define NUM_INTERVALS	3	/* How many iterations of TIME_INTERVAL */
 #define NUM_SETS	4	/* How many share values (with same ratio) */
 #define MULTIPLIER   	10	/* decides the rate at which share value gets multiplied */
 #define GRANULARITY    5	/* % value by which shares of a group changes */
-char *TCID = "cpu_controller_test01";
+char *TCID = "cpuctl_test01";
 int TST_TOTAL = 1;
 pid_t scriptpid;
 char path[] = "/dev/cpuctl";
@@ -139,11 +140,7 @@ int main(int argc, char *argv[])
 	write_to_file(mytaskfile, "a", pid);	/* Assign the task to it's group */
 	write_to_file(mysharesfile, "w", myshares);
 
-	fd = open("./myfifo", 0);
-	if (fd == -1) {
-		tst_brkm(TBROK, cleanup,
-			 "Could not open fifo for synchronization");
-	}
+	fd = SAFE_OPEN(cleanup, "./myfifo", 0);
 
 	fprintf(stdout, "\ntask-%d SHARES=%lu\n", my_group_num, myshares);
 	read(fd, &ch, 1);	/* To block all tasks here and fire them up at the same time */

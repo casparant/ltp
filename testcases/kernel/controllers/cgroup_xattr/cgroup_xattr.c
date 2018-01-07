@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Oracle and/or its affiliates. All Rights Reserved.
+ * Copyright (c) 2013-2015 Oracle and/or its affiliates. All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -63,9 +63,10 @@ struct tst_key {
 };
 
 /* only security.* & trusted.* are valid key names */
-static const struct tst_key tkeys[] = {
+static struct tst_key tkeys[] = {
+	{ .name = "security.",		.good = 0,	},  /* see setup() */
 	{ .name = "trusted.test",	.good = 1,	},
-	{ .name = "security.",		.good = 1,	},
+	{ .name = "trusted.",		.good = 0,	},  /* see setup() */
 	{ .name = "user.",		.good = 0,	},
 	{ .name = "system.",		.good = 0,	},
 };
@@ -140,9 +141,11 @@ static void help(void)
 
 void setup(int argc, char *argv[])
 {
+	unsigned int i;
+
 	tst_parse_opts(argc, argv, options, help);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	if (access("/proc/cgroups", F_OK) == -1)
 		tst_brkm(TCONF, NULL, "Kernel doesn't support cgroups");
@@ -150,6 +153,14 @@ void setup(int argc, char *argv[])
 	if (tst_kvercmp(3, 7, 0) < 0) {
 		tst_brkm(TCONF, NULL,
 			"Test must be run with kernel 3.7 or newer");
+	}
+
+	for (i = 0; i < ARRAY_SIZE(tkeys); ++i) {
+		if (!strcmp(tkeys[i].name, "security.")) {
+			tkeys[i].good = tst_kvercmp(3, 15, 0) < 0;
+		} else if (!strcmp(tkeys[i].name, "trusted.")) {
+			tkeys[i].good = tst_kvercmp(4, 5, 0) < 0;
+		}
 	}
 
 	int value_size = DEFAULT_VALUE_SIZE;
@@ -215,8 +226,7 @@ static void cleanup(void)
 
 	int i;
 	for (i = 0; i < odir_num; ++i) {
-		if (closedir(odir[i]) == -1)
-			tst_brkm(TBROK, NULL, "Failed to close dir\n");
+		SAFE_CLOSEDIR(NULL, odir[i]);
 	}
 
 	char *cwd = tst_get_tmpdir();
@@ -226,17 +236,11 @@ static void cleanup(void)
 	for (i = 0; i < cgrp_opt_num; ++i) {
 		if (cgrp_opt[i].subdir) {
 			SAFE_CHDIR(NULL, cgrp_opt[i].dir);
-			if (rmdir(subdir_name) == -1) {
-				tst_brkm(TBROK | TERRNO, NULL,
-					"Can't remove dir");
-			}
+			SAFE_RMDIR(NULL, subdir_name);
 			SAFE_CHDIR(NULL, "..");
 		}
 		if (cgrp_opt[i].mounted) {
-			if (umount(cgrp_opt[i].dir) == -1) {
-				tst_brkm(TBROK | TERRNO, NULL,
-					"Can't unmount: %s", cgrp_opt[i].dir);
-			}
+			SAFE_UMOUNT(NULL, cgrp_opt[i].dir);
 		}
 	}
 
@@ -270,8 +274,11 @@ int mount_cgroup(void)
 		 * additional "xattr" option. In that case, mount will succeed,
 		 * but xattr won't be supported in the new mount anyway.
 		 * Should be removed as soon as a fix committed to upstream.
+		 *
+		 * But not applicable for kernels >= 3.15 where xattr supported
+		 * natively.
 		 */
-		if (hier != 0)
+		if (hier != 0 && tst_kvercmp(3, 15, 0) < 0)
 			continue;
 
 		int i, found = 0;
@@ -321,7 +328,7 @@ int mount_cgroup(void)
 
 static int set_xattrs(const char *file)
 {
-	int i, err, fail, res = 0;
+	unsigned int i, err, fail, res = 0;
 
 	for (i = 0; i < ARRAY_SIZE(tkeys); ++i) {
 		err = setxattr(file, tkeys[i].name,
@@ -343,7 +350,7 @@ static int set_xattrs(const char *file)
 
 static int get_xattrs(const char *file)
 {
-	int i, fail, res = 0;
+	unsigned int i, fail, res = 0;
 
 	for (i = 0; i < ARRAY_SIZE(tkeys); ++i) {
 		/* get value size */
@@ -366,7 +373,7 @@ static int get_xattrs(const char *file)
 				"Can't get buffer of key %s",
 				tkeys[i].name);
 		}
-		fail = val.size != size ||
+		fail = val.size != (size_t)size ||
 			strncmp(val.buf, xval, val.size) != 0;
 		res |= fail;
 

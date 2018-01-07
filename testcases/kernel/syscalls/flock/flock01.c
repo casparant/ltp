@@ -69,7 +69,9 @@
 #include <stdio.h>
 #include <sys/wait.h>
 #include <sys/file.h>
+#include <fcntl.h>
 #include "test.h"
+#include "safe_macros.h"
 
 void setup(void);
 void cleanup(void);
@@ -83,10 +85,10 @@ struct test_case_t {
 	int operation;
 	char *opt;
 } test_cases[] = {
-	{
-	LOCK_SH, "Shared Lock"}, {
-	LOCK_UN, "Unlock"}, {
-LOCK_EX, "Exclusive Lock"},};
+	{ LOCK_SH, "Shared Lock" },
+	{ LOCK_UN, "Unlock"},
+	{ LOCK_EX, "Exclusive Lock"}
+};
 
 int main(int argc, char **argv)
 {
@@ -108,17 +110,15 @@ int main(int argc, char **argv)
 
 			/* Testing system call */
 			TEST(flock(fd, test_cases[i].operation));
-
 			if (TEST_RETURN == -1) {
-				tst_resm(TFAIL,
-					 "flock() failed to get %s, error number=%d : %s",
-					 test_cases[i].opt, TEST_ERRNO,
-					 strerror(TEST_ERRNO));
+				tst_resm(TFAIL | TTERRNO,
+					 "flock() failed to get %s",
+					 test_cases[i].opt);
 				continue;	/*next loop for MTKERNEL  */
 			} else {
 				tst_resm(TPASS,
-					 "flock() succeeded with %s, returned error number=%d",
-					 test_cases[i].opt, TEST_ERRNO);
+					 "flock() succeeded with %s",
+					 test_cases[i].opt);
 			}
 
 		}
@@ -155,17 +155,7 @@ void setup(void)
 	sprintf(filename, "flock01.%d", getpid());
 
 	/* creating temporary file */
-	fd = creat(filename, 0644);
-	if (fd < 0) {
-		tst_resm(TFAIL, "creating a new file failed");
-
-		/* Removing temp directory */
-		tst_rmdir();
-
-		/* exit with resturn code appropriate for result */
-		tst_exit();
-
-	}
+	fd = SAFE_OPEN(tst_rmdir, filename, O_CREAT | O_TRUNC | O_RDWR, 0644);
 }
 
 /*

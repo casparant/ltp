@@ -46,6 +46,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/sysmacros.h>
 #include <sys/types.h>
 #include <linux/kernel.h>
 #include <unistd.h>
@@ -53,7 +54,7 @@
 
 #include "test.h"
 #include "safe_macros.h"
-#include "tst_module.h"
+#include "old_module.h"
 
 #include "../tbio_kernel/tbio.h"
 
@@ -85,7 +86,7 @@ void setup(void)
 	struct stat st;
 	unsigned int i, valid_node_created;
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	if (tst_kvercmp(2, 6, 0) < 0) {
 		tst_brkm(TCONF, NULL,
@@ -132,11 +133,7 @@ void setup(void)
 			tst_brkm(TBROK | TERRNO, cleanup, "mknod() failed");
 	}
 
-	tbio_fd = open(DEVICE_NAME, O_RDWR);
-	if (tbio_fd < 0) {
-		tst_brkm(TBROK | TERRNO, cleanup, "open of %s failed",
-			DEVICE_NAME);
-	}
+	tbio_fd = SAFE_OPEN(cleanup, DEVICE_NAME, O_RDWR);
 
 	tst_resm(TINFO, "Device opened successfully ");
 }

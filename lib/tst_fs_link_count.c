@@ -24,7 +24,6 @@
 #include "test.h"
 #include "usctest.h"
 #include "safe_macros.h"
-#include "tst_fs_type.h"
 
 #define MAX_SANE_HARD_LINKS	65535
 
@@ -41,7 +40,7 @@ const long subdir_limit_whitelist[] = {
 	TST_F2FS_MAGIC,     TST_NILFS_MAGIC,  TST_EXOFS_MAGIC
 };
 
-int tst_fs_fill_hardlinks(void (*cleanup) (void), const char *dir)
+int tst_fs_fill_hardlinks_(void (*cleanup) (void), const char *dir)
 {
 	unsigned int i, j;
 	char base_filename[PATH_MAX], link_filename[PATH_MAX];
@@ -51,8 +50,10 @@ int tst_fs_fill_hardlinks(void (*cleanup) (void), const char *dir)
 		SAFE_MKDIR(cleanup, dir, 0744);
 
 	SAFE_STAT(cleanup, dir, &s);
-	if (!S_ISDIR(s.st_mode))
+	if (!S_ISDIR(s.st_mode)) {
 		tst_brkm(TBROK, cleanup, "%s is not directory", dir);
+		return 0;
+	}
 
 	sprintf(base_filename, "%s/testfile0", dir);
 	SAFE_TOUCH(cleanup, base_filename, 0644, NULL);
@@ -71,6 +72,7 @@ int tst_fs_fill_hardlinks(void (*cleanup) (void), const char *dir)
 					 "hard links for %s have %i, should be"
 					 " %d", base_filename,
 					 (int)s.st_nlink, i);
+				return 0;
 			} else {
 				tst_resm(TINFO, "the maximum number of hard "
 					 "links to %s is hit: %d",
@@ -86,6 +88,7 @@ int tst_fs_fill_hardlinks(void (*cleanup) (void), const char *dir)
 			tst_brkm(TBROK, cleanup, "link(%s, %s) failed "
 				 "unexpectedly: %s", base_filename,
 				 link_filename, strerror(errno));
+			return 0;
 		}
 	}
 
@@ -100,7 +103,7 @@ max_hardlinks_cleanup:
 	return 0;
 }
 
-int tst_fs_fill_subdirs(void (*cleanup) (void), const char *dir)
+int tst_fs_fill_subdirs_(void (*cleanup) (void), const char *dir)
 {
 	unsigned int i, j, whitelist_size;
 	char dirname[PATH_MAX];
@@ -111,8 +114,10 @@ int tst_fs_fill_subdirs(void (*cleanup) (void), const char *dir)
 		SAFE_MKDIR(cleanup, dir, 0744);
 
 	SAFE_STAT(cleanup, dir, &s);
-	if (!S_ISDIR(s.st_mode))
+	if (!S_ISDIR(s.st_mode)) {
 		tst_brkm(TBROK, cleanup, "%s is not directory", dir);
+		return 0;
+	}
 
 	/* for current kernel, subdir limit is not availiable for all fs */
 	fs_type = tst_fs_type(cleanup, dir);
@@ -145,6 +150,7 @@ int tst_fs_fill_subdirs(void (*cleanup) (void), const char *dir)
 				tst_brkm(TBROK, cleanup, "%s link counts have"
 					 "%d, should be %d", dir,
 					 (int)s.st_nlink, i + 2);
+				return 0;
 			} else {
 				tst_resm(TINFO, "the maximum subdirectories in "
 				 "%s is hit: %d", dir, (int)s.st_nlink);
@@ -159,6 +165,7 @@ int tst_fs_fill_subdirs(void (*cleanup) (void), const char *dir)
 			tst_brkm(TBROK, cleanup, "mkdir(%s, 0755) failed "
 				 "unexpectedly: %s", dirname,
 				 strerror(errno));
+			return 0;
 		}
 
 	}

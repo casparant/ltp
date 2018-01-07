@@ -73,13 +73,14 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
 #include <pwd.h>
 
 #include "test.h"
+#include "safe_macros.h"
 
 #define DIR_MODE 	S_IRWXU | S_IRWXG | S_IRWXO
 #define PERMS		01777	/*
@@ -149,7 +150,7 @@ int main(int ac, char **av)
  */
 void setup(void)
 {
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
@@ -169,9 +170,7 @@ void setup(void)
 	 * Create a test directory under temporary directory with specified
 	 * mode permissios and open it for reading/writing.
 	 */
-	if (mkdir(TESTDIR, DIR_MODE) < 0) {
-		tst_brkm(TBROK, cleanup, "mkdir(2) of %s failed", TESTDIR);
-	}
+	SAFE_MKDIR(cleanup, TESTDIR, DIR_MODE);
 	if ((fd = open(TESTDIR, O_RDONLY)) == -1) {
 		tst_brkm(TBROK, cleanup,
 			 "open(%s, O_RDONLY) failed, errno=%d : %s",
@@ -190,11 +189,7 @@ void cleanup(void)
 {
 
 	/* Close the test directory opened during setup() */
-	if (close(fd) == -1) {
-		tst_brkm(TBROK, NULL,
-			 "close(%s) Failed, errno=%d : %s",
-			 TESTDIR, errno, strerror(errno));
-	}
+	SAFE_CLOSE(NULL, fd);
 
 	tst_rmdir();
 

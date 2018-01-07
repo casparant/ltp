@@ -70,12 +70,13 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
 #include <sys/stat.h>
 #include "test.h"
+#include "safe_macros.h"
 
 #define  TESTFILE	"testfile"
 #define  SYMFILE	"slink_file"
@@ -134,11 +135,7 @@ int main(int ac, char **av)
 		}
 
 		/* Unlink the symlink file for next loop */
-		if (unlink(SYMFILE) == -1) {
-			tst_brkm(TBROK, cleanup,
-				 "unlink(%s) Failed, errno=%d : %s",
-				 SYMFILE, errno, strerror(errno));
-		}
+		SAFE_UNLINK(cleanup, SYMFILE);
 		tst_count++;	/* incr TEST_LOOP counter */
 	}
 

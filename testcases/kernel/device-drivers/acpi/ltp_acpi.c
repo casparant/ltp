@@ -22,9 +22,8 @@
 #include <stdlib.h>
 
 #include "test.h"
-#include "tst_module.h"
+#include "old_module.h"
 #include "safe_macros.h"
-#include "safe_stdio.h"
 
 #include "ltp_acpi.h"
 
@@ -144,7 +143,7 @@ int main(int argc, char *argv[])
 {
 	tst_parse_opts(argc, argv, NULL, NULL);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	if (tst_kvercmp(2, 6, 0) < 0) {
 		tst_brkm(TCONF, NULL,

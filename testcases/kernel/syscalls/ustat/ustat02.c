@@ -21,17 +21,22 @@
  */
 
 #include <unistd.h>
-#include <ustat.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#include "config.h"
 #include "test.h"
 #include "safe_macros.h"
 
-static void setup(void);
-static void cleanup(void);
-
 char *TCID = "ustat02";
+
+#ifdef HAVE_USTAT
+# ifdef HAVE_SYS_USTAT_H
+#  include <sys/ustat.h>
+# endif
+
+static void setup(void);
 
 static dev_t invalid_dev = -1;
 static dev_t root_dev;
@@ -68,7 +73,7 @@ int main(int ac, char **av)
 			TEST(ustat(*tc[i].dev, tc[i].buf));
 
 			if (TEST_RETURN == -1 && TEST_ERRNO == ENOSYS)
-				tst_brkm(TCONF, cleanup, "ustat not supported");
+				tst_brkm(TCONF, NULL, "ustat not supported");
 
 			if ((TEST_RETURN == -1)
 			    && (TEST_ERRNO == tc[i].exp_errno)) {
@@ -86,7 +91,6 @@ int main(int ac, char **av)
 		}
 	}
 
-	cleanup();
 	tst_exit();
 }
 
@@ -94,16 +98,18 @@ static void setup(void)
 {
 	struct stat buf;
 
-	tst_sig(NOFORK, DEF_HANDLER, cleanup);
+	tst_sig(NOFORK, DEF_HANDLER, NULL);
 
 	TEST_PAUSE;
 
 	/* Find a valid device number */
-	SAFE_STAT(cleanup, "/", &buf);
+	SAFE_STAT(NULL, "/", &buf);
 
 	root_dev = buf.st_dev;
 }
-
-static void cleanup(void)
+#else
+int main(void)
 {
+	tst_brkm(TCONF, NULL, "system doesn't have ustat() support");
 }
+#endif

@@ -39,11 +39,10 @@
  *
  * The documentation bug is filed as:
  * https://bugzilla.kernel.org/show_bug.cgi?id=15446 . If you want the message
- * removed, please ask your fellow kernel maintainer to fix his/her
- * documentation.
+ * removed, please ask your fellow kernel maintainer to fix their documentation.
  *
  * Thanks!
- * -Garrett
+ * -Ngie
  *
  * USAGE:  <for command-line>
  *  sysctl03 [-c n] [-e] [-i n] [-I x] [-P x] [-t]
@@ -62,6 +61,7 @@
  *	Test must be run as root.
  */
 #include "test.h"
+#include "safe_macros.h"
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <stdio.h>
@@ -86,7 +86,6 @@ int sysctl(int *name, int nlen, void *oldval, size_t * oldlenp,
 	return syscall(__NR__sysctl, &args);
 }
 
-#define SIZE(x) sizeof(x)/sizeof(x[0])
 #define OSNAMESZ 100
 
 void setup(void);
@@ -123,9 +122,9 @@ int main(int ac, char **av)
 		tst_count = 0;
 
 		strcpy(osname, "Linux");
-		osnamelth = SIZE(osname);
+		osnamelth = sizeof(osname);
 
-		TEST(sysctl(name, SIZE(name), 0, 0, osname, osnamelth));
+		TEST(sysctl(name, ARRAY_SIZE(name), 0, 0, osname, osnamelth));
 
 		if (TEST_RETURN != -1) {
 			tst_resm(TFAIL, "sysctl(2) succeeded unexpectedly");
@@ -142,23 +141,20 @@ int main(int ac, char **av)
 			}
 		}
 
-		osnamelth = SIZE(osname);
+		osnamelth = sizeof(osname);
 		if ((ltpuser = getpwnam("nobody")) == NULL) {
 			tst_brkm(TBROK, cleanup, "getpwnam() failed");
 		}
 
 		/* set process ID to "ltpuser1" */
-		if (seteuid(ltpuser->pw_uid) == -1) {
-			tst_brkm(TBROK, cleanup,
-				 "seteuid() failed, errno %d", errno);
-		}
+		SAFE_SETEUID(cleanup, ltpuser->pw_uid);
 
 		if ((pid = FORK_OR_VFORK()) == -1) {
 			tst_brkm(TBROK, cleanup, "fork() failed");
 		}
 
 		if (pid == 0) {
-			TEST(sysctl(name, SIZE(name), 0, 0, osname, osnamelth));
+			TEST(sysctl(name, ARRAY_SIZE(name), 0, 0, osname, osnamelth));
 
 			if (TEST_RETURN != -1) {
 				tst_resm(TFAIL, "call succeeded unexpectedly");
@@ -184,9 +180,7 @@ int main(int ac, char **av)
 		}
 
 		/* set process ID back to root */
-		if (seteuid(0) == -1) {
-			tst_brkm(TBROK, cleanup, "seteuid() failed");
-		}
+		SAFE_SETEUID(cleanup, 0);
 	}
 	cleanup();
 	tst_exit();
@@ -194,7 +188,7 @@ int main(int ac, char **av)
 
 void setup(void)
 {
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_sig(FORK, DEF_HANDLER, cleanup);
 

@@ -64,6 +64,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include "test.h"
+#include "safe_macros.h"
 #include "libftest.h"
 
 char *TCID = "ftest03";
@@ -149,10 +150,7 @@ static void setup(void)
 
 	mkdir(fuss, 0755);
 
-	if (chdir(fuss) < 0) {
-		tst_brkm(TBROK, NULL, "\tCan't chdir(%s), error %d.", fuss,
-			 errno);
-	}
+	SAFE_CHDIR(NULL, fuss);
 
 	/*
 	 * Default values for run conditions.
@@ -181,13 +179,8 @@ static void runtest(void)
 		test_name[0] = 'a' + i;
 		test_name[1] = '\0';
 
-		fd = open(test_name, O_RDWR | O_CREAT | O_TRUNC, 0666);
-
-		if (fd < 0) {
-			tst_brkm(TBROK, NULL, "\tError %d creating %s/%s.",
-				 errno,
-				 fuss, test_name);
-		}
+		fd = SAFE_OPEN(NULL, test_name, O_RDWR | O_CREAT | O_TRUNC,
+			       0666);
 
 		if ((child = fork()) == 0) {
 			dotest(nchild, i, fd);
@@ -295,6 +288,7 @@ static void dotest(int testers, int me, int fd)
 	struct iovec val_iovec[MAXIOVCNT];
 	struct iovec zero_iovec[MAXIOVCNT];
 	int w_ioveclen;
+	struct stat stat;
 
 	nchunks = max_size / csize;
 	whenmisc = 0;
@@ -439,6 +433,10 @@ static void dotest(int testers, int me, int fd)
 						tst_resm(TINFO,
 							 "\tTest[%d]: last_trunc = 0x%x.",
 							 me, last_trunc);
+						fstat(fd, &stat);
+						tst_resm(TINFO,
+							 "\tStat: size=%llx, ino=%x",
+							 stat.st_size, (unsigned)stat.st_ino);
 						sync();
 						ft_dumpiov(&r_iovec[i]);
 						ft_dumpbits(bits,
@@ -473,6 +471,10 @@ static void dotest(int testers, int me, int fd)
 						tst_resm(TINFO,
 							 "\tTest[%d]: last_trunc = 0x%x.",
 							 me, last_trunc);
+						fstat(fd, &stat);
+						tst_resm(TINFO,
+							 "\tStat: size=%llx, ino=%x",
+							 stat.st_size, (unsigned)stat.st_ino);
 						sync();
 						ft_dumpiov(&r_iovec[i]);
 						ft_dumpbits(bits,

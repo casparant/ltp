@@ -30,8 +30,10 @@ autom4te.cache
 /execltp
 /ltp-devel.spec
 /README.ltp-devel
+/tags
 /Version
 /include/mk/config.mk
+/include/mk/config-openposix.mk
 /include/mk/features.mk
 /m4/ltp-version.m4
 /lib/ltp.pc
@@ -39,6 +41,10 @@ autom4te.cache
 /pan/ltp-pan
 /pan/ltp-scanner
 
+cscope.*
+ncscope.*
+
+.dep_modules
 .gitattributes
 .pc/
 patches/
@@ -53,7 +59,6 @@ patches/
 logfile.*
 
 /utils/benchmark/ebizzy-0.3/ebizzy
-/lib/tests/bytes_by_prefix_test
 /lib/tests/tst_tmpdir_test
 /lib/tests/tst_checkpoint
 /lib/tests/tst_checkpoint_wait_timeout

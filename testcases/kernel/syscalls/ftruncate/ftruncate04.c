@@ -38,7 +38,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <inttypes.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -154,8 +154,8 @@ static void ftruncate_expect_success(int fd, off_t offset, const char *msg)
 
 	if (sb.st_size != offset) {
 		tst_resm(TFAIL,
-			 "ftruncate() to %zu bytes succeded but fstat() reports size %zu",
-			 offset, sb.st_size);
+			 "ftruncate() to %li bytes succeded but fstat() reports size %li",
+			 (long)offset, (long)sb.st_size);
 		return;
 	}
 
@@ -240,19 +240,32 @@ static void setup(void)
 	if (!device)
 		tst_brkm(TCONF, cleanup, "Failed to obtain block device");
 
-	tst_mkfs(cleanup, device, fs_type, NULL);
+	/* the kernel returns EPERM when CONFIG_MANDATORY_FILE_LOCKING is not
+	 * supported - to avoid false negatives, mount the fs first without
+	 * flags and then remount it as MS_MANDLOCK */
 
-	SAFE_MOUNT(NULL, device, MOUNT_DIR, fs_type, MS_MANDLOCK, NULL);
+	tst_mkfs(cleanup, device, fs_type, NULL, NULL);
+	SAFE_MOUNT(cleanup, device, MOUNT_DIR, fs_type, 0, NULL);
 	mount_flag = 1;
+
+	if (mount(NULL, MOUNT_DIR, NULL, MS_REMOUNT|MS_MANDLOCK, NULL) == -1) {
+		if (errno == EPERM) {
+			tst_brkm(TCONF, cleanup, "Mandatory locking (likely) "
+				 "not supported by this system");
+		} else {
+			tst_brkm(TBROK | TERRNO, cleanup,
+				 "Remount with MS_MANDLOCK failed");
+		}
+	}
 }
 
 static void cleanup(void)
 {
-	if (mount_flag && umount(MOUNT_DIR))
+	if (mount_flag && tst_umount(MOUNT_DIR))
 		tst_resm(TWARN | TERRNO, "umount(%s) failed", device);
 
 	if (device)
-		tst_release_device(NULL, device);
+		tst_release_device(device);
 
 	tst_rmdir();
 }

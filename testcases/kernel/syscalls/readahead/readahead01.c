@@ -25,18 +25,20 @@
 /*
  * errno tests for readahead() syscall
  */
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/syscall.h>
-#include <sys/socket.h>
+#define _GNU_SOURCE
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
 #include "config.h"
 #include "test.h"
 #include "safe_macros.h"
-#include "linux_syscall_numbers.h"
+#include "lapi/syscalls.h"
 
 char *TCID = "readahead01";
 int TST_TOTAL = 1;
@@ -84,7 +86,7 @@ static void test_bad_fd(void)
 	int fd;
 
 	tst_resm(TINFO, "test_bad_fd -1");
-	TEST(ltp_syscall(__NR_readahead, -1, 0, getpagesize()));
+	TEST(readahead(-1, 0, getpagesize()));
 	check_ret(-1);
 	check_errno(EBADF);
 
@@ -96,7 +98,7 @@ static void test_bad_fd(void)
 	fd = open(tempname, O_WRONLY);
 	if (fd == -1)
 		tst_resm(TBROK | TERRNO, "Failed to open testfile");
-	TEST(ltp_syscall(__NR_readahead, fd, 0, getpagesize()));
+	TEST(readahead(fd, 0, getpagesize()));
 	check_ret(-1);
 	check_errno(EBADF);
 	close(fd);
@@ -110,7 +112,7 @@ static void test_invalid_fd(void)
 	tst_resm(TINFO, "test_invalid_fd pipe");
 	if (pipe(fd) < 0)
 		tst_resm(TBROK | TERRNO, "Failed to create pipe");
-	TEST(ltp_syscall(__NR_readahead, fd[0], 0, getpagesize()));
+	TEST(readahead(fd[0], 0, getpagesize()));
 	check_ret(-1);
 	check_errno(EINVAL);
 	close(fd[0]);
@@ -120,7 +122,7 @@ static void test_invalid_fd(void)
 	fd[0] = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd[0] < 0)
 		tst_resm(TBROK | TERRNO, "Failed to create socket");
-	TEST(ltp_syscall(__NR_readahead, fd[0], 0, getpagesize()));
+	TEST(readahead(fd[0], 0, getpagesize()));
 	check_ret(-1);
 	check_errno(EINVAL);
 	close(fd[0]);
@@ -144,7 +146,7 @@ int main(int argc, char *argv[])
 
 static void setup(void)
 {
-	tst_require_root(NULL);
+	tst_require_root();
 	tst_tmpdir();
 
 	/* check if readahead syscall is supported */

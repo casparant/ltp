@@ -45,7 +45,7 @@
 #include "test.h"
 #include "safe_macros.h"
 
-static int PAGESIZE;
+static int pagesize;
 static rlim_t STACK_LIMIT = 10485760;
 
 static void cleanup(void);
@@ -140,13 +140,10 @@ static void setup4(struct test_case_t *tc)
 {
 	struct rlimit as_lim;
 
-	if (getrlimit(RLIMIT_AS, &as_lim) == -1) {
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "getrlimit(RLIMIT_AS) failed");
-	}
+	SAFE_GETRLIMIT(cleanup, RLIMIT_AS, &as_lim);
 
 	tc->addr = global_pointer;
-	tc->len = as_lim.rlim_cur - (rlim_t)global_pointer + PAGESIZE;
+	tc->len = as_lim.rlim_cur - (rlim_t)global_pointer + pagesize;
 	tc->vector = global_vec;
 
 	/*
@@ -161,7 +158,7 @@ static void setup(void)
 	char *buf;
 	int fd;
 
-	PAGESIZE = getpagesize();
+	pagesize = getpagesize();
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
@@ -170,7 +167,7 @@ static void setup(void)
 	TEST_PAUSE;
 
 	/* global_pointer will point to a mmapped area of global_len bytes */
-	global_len = PAGESIZE * 2;
+	global_len = pagesize * 2;
 
 	buf = SAFE_MALLOC(cleanup, global_len);
 	memset(buf, 42, global_len);
@@ -186,7 +183,7 @@ static void setup(void)
 				   PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
 	global_vec = SAFE_MALLOC(cleanup,
-				 (global_len + PAGESIZE - 1) / PAGESIZE);
+				 (global_len + pagesize - 1) / pagesize);
 
 	SAFE_CLOSE(cleanup, fd);
 }

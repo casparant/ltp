@@ -38,6 +38,7 @@
 /*              Manas Kumar Nayak maknayak@in.ibm.com>                        */
 /******************************************************************************/
 
+#define _XOPEN_SOURCE 500
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -47,7 +48,8 @@
 #include <sys/stat.h>
 
 #include "test.h"
-#include "linux_syscall_numbers.h"
+#include "safe_macros.h"
+#include "lapi/syscalls.h"
 
 struct testcase_t {
 	const char *msg;
@@ -161,8 +163,7 @@ static void makechild(struct testcase_t *t, void (*childfn)(void))
 static void wait4child(pid_t pid)
 {
 	int status;
-	if (waitpid(pid, &status, 0) == -1)
-		tst_brkm(TBROK | TERRNO, cleanup, "waitpid");
+	SAFE_WAITPID(cleanup, pid, &status, 0);
 	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
 		tst_resm(TFAIL, "child returns %d", status);
 }

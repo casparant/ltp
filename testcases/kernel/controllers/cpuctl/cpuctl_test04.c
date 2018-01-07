@@ -61,11 +61,12 @@
 
 #include "../libcontrollers/libcontrollers.h"
 #include "test.h"		/* LTP harness APIs */
+#include "safe_macros.h"
 
 #define TIME_INTERVAL	100	/* Time interval in seconds */
 #define NUM_INTERVALS	2	/* How many iterations of TIME_INTERVAL */
 
-char *TCID = "cpu_controller_test06";
+char *TCID = "cpuctl_test04";
 int TST_TOTAL = 2;
 pid_t scriptpid;
 char path[] = "/dev/cpuctl";
@@ -158,11 +159,7 @@ int main(int argc, char *argv[])
 
 	write_to_file(mytaskfile, "a", getpid());	/* Assign the task to it's group */
 
-	fd = open("./myfifo", 0);
-	if (fd == -1) {
-		tst_brkm(TBROK, cleanup,
-			 "Could not open fifo for synchronization");
-	}
+	fd = SAFE_OPEN(cleanup, "./myfifo", 0);
 
 	read(fd, &ch, 1);	/* To block all tasks here and fire them up at the same time */
 

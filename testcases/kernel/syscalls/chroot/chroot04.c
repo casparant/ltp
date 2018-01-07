@@ -48,6 +48,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include "test.h"
+#include "safe_macros.h"
 #include <pwd.h>
 
 char *TCID = "chroot04";
@@ -99,6 +100,8 @@ void setup(void)
 {
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
+	tst_require_root();
+
 	TEST_PAUSE;
 
 	/* make a temporary directory and cd to it */
@@ -112,9 +115,7 @@ void setup(void)
 	}
 
 	ltpuser = getpwnam(nobody_uid);
-	if (seteuid(ltpuser->pw_uid) == -1) {
-		tst_brkm(TBROK, cleanup, "seteuid to nobody failed");
-	}
+	SAFE_SETEUID(cleanup, ltpuser->pw_uid);
 
 }
 
@@ -125,9 +126,7 @@ void setup(void)
 void cleanup(void)
 {
 	/* reset the process ID to the saved ID (root) */
-	if (setuid(0) == -1) {
-		tst_brkm(TBROK | TERRNO, NULL, "setuid(0) failed");
-	}
+	SAFE_SETUID(NULL, 0);
 	if (rmdir(TEST_TMPDIR) != 0) {
 		tst_brkm(TFAIL | TERRNO, NULL, "rmdir(%s) failed", TEST_TMPDIR);
 	}

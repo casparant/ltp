@@ -24,7 +24,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <pwd.h>
-#include <wait.h>
+#include <sys/wait.h>
 
 #include "test.h"
 #include "safe_macros.h"
@@ -80,7 +80,7 @@ static void setup(void)
 {
 	struct passwd *pw;
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	pw = SAFE_GETPWNAM(NULL, "nobody");
 	nobody_uid = pw->pw_uid;

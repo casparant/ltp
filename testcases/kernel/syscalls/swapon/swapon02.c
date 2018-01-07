@@ -33,9 +33,8 @@
 #include <sys/utsname.h>
 #include <signal.h>
 #include "test.h"
-#include "linux_syscall_numbers.h"
+#include "lapi/syscalls.h"
 #include "safe_macros.h"
-#include "tst_fs_type.h"
 #include "libswapon.h"
 
 static void setup(void);
@@ -126,7 +125,7 @@ static void setup(void)
 
 	tst_sig(FORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	nobody = SAFE_GETPWNAM(cleanup, "nobody");
 	nobody_uid = nobody->pw_uid;

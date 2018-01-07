@@ -28,7 +28,7 @@
 
 #include "test.h"
 #include "safe_macros.h"
-#include "tst_module.h"
+#include "old_module.h"
 
 char *TCID = "block_dev";
 int TST_TOTAL = 9;
@@ -59,7 +59,7 @@ void setup(int argc, char *argv[])
 {
 	tst_parse_opts(argc, argv, options, help);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	if (tst_kvercmp(2, 6, 0) < 0) {
 		tst_brkm(TCONF, NULL,

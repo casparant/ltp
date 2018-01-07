@@ -28,15 +28,16 @@
 
 #include <sys/vfs.h>
 #include "test.h"
-#include "tst_fs_type.h"
+#include "tst_fs.h"
 
-long tst_fs_type(void (*cleanup)(void), const char *path)
+long tst_fs_type_(void (*cleanup)(void), const char *path)
 {
 	struct statfs sbuf;
 
 	if (statfs(path, &sbuf)) {
 		tst_brkm(TBROK | TERRNO, cleanup,
 		         "tst_fs_type: Failed to statfs(%s)", path);
+		return 0;
 	}
 
 	return sbuf.f_type;

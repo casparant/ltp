@@ -29,7 +29,6 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <error.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -112,7 +111,7 @@ static void setup(void)
 			 "that are 2.6.16 and higher");
 	}
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
@@ -124,7 +123,7 @@ static void setup(void)
 	if (!device)
 		tst_brkm(TCONF, cleanup, "Failed to acquire device");
 
-	tst_mkfs(cleanup, device, fs_type, NULL);
+	tst_mkfs(cleanup, device, fs_type, NULL, NULL);
 
 	TEST_PAUSE;
 
@@ -132,10 +131,7 @@ static void setup(void)
 	 * mount a read-only file system for EROFS test
 	 */
 	SAFE_MKDIR(cleanup, MNT_POINT, DIR_MODE);
-	if (mount(device, MNT_POINT, fs_type, MS_RDONLY, NULL) < 0) {
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "mount device:%s failed", device);
-	}
+	SAFE_MOUNT(cleanup, device, MNT_POINT, fs_type, MS_RDONLY, NULL);
 	mount_flag = 1;
 	dir_fd = SAFE_OPEN(cleanup, MNT_POINT, O_DIRECTORY);
 
@@ -182,7 +178,7 @@ static void cleanup(void)
 		tst_resm(TWARN | TERRNO, "umount device:%s failed", device);
 
 	if (device)
-		tst_release_device(NULL, device);
+		tst_release_device(device);
 
 	tst_rmdir();
 }

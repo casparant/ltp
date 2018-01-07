@@ -91,6 +91,7 @@
 #include <asm/atomic.h>
 #include <linux/module.h>
 #include "test.h"
+#include "safe_macros.h"
 
 #ifndef PAGE_SIZE
 #define PAGE_SIZE sysconf(_SC_PAGE_SIZE)
@@ -210,10 +211,7 @@ int setup1(void)
 void cleanup1(void)
 {
 	/* Change effective user id to root */
-	if (seteuid(0) == -1) {
-		tst_brkm(TBROK, NULL, "seteuid failed to set the effective"
-			 " uid to root");
-	}
+	SAFE_SETEUID(NULL, 0);
 }
 
 int setup2(void)
@@ -245,7 +243,7 @@ void setup(void)
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	if (tst_kvercmp(2, 5, 48) >= 0)
 		tst_brkm(TCONF, NULL, "This test will not work on "

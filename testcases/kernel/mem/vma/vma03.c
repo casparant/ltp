@@ -49,6 +49,8 @@
 #include <unistd.h>
 
 #include "test.h"
+#include "safe_macros.h"
+#include "tst_kernel.h"
 
 char *TCID = "vma03";
 int TST_TOTAL = 1;
@@ -70,9 +72,11 @@ int main(int argc, char *argv[])
 	void *map, *remap;
 	off_t pgoff;
 
-#if __WORDSIZE != 32
-	tst_brkm(TCONF, NULL, "test is designed for 32-bit system only.");
-#endif
+	if (__WORDSIZE != 32 || tst_kernel_bits() != 32) {
+		tst_brkm(TCONF, NULL,
+			 "test is designed for 32-bit system only.");
+	}
+
 	tst_parse_opts(argc, argv, NULL, NULL);
 
 	pgsz = sysconf(_SC_PAGE_SIZE);
@@ -81,11 +85,14 @@ int main(int argc, char *argv[])
 	for (lc = 0; TEST_LOOPING(lc); lc++) {
 		tst_count = 0;
 
-		fd = open(TESTFILE, O_RDWR);
-		if (fd == -1)
-			tst_brkm(TBROK | TERRNO, NULL, "open %s", TESTFILE);
+		fd = SAFE_OPEN(NULL, TESTFILE, O_RDWR);
 
-		pgoff = ULONG_MAX - 1;
+		/*
+		 * The pgoff is counted in 4K units and must be page-aligned,
+		 * hence we must align it down to page_size/4096 in a case that
+		 * the system has page_size > 4K.
+		 */
+		pgoff = (ULONG_MAX - 1)&(~((pgsz-1)>>12));
 		map = mmap2(NULL, pgsz, PROT_READ | PROT_WRITE, MAP_PRIVATE,
 			    fd, pgoff);
 		if (map == MAP_FAILED)
@@ -123,9 +130,7 @@ static void setup(void)
 
 	tst_tmpdir();
 
-	fd = creat(TESTFILE, 0644);
-	if (fd == -1)
-		tst_brkm(TBROK | TERRNO, NULL, "creat %s", TESTFILE);
+	fd = SAFE_CREAT(NULL, TESTFILE, 0644);
 	close(fd);
 
 	TEST_PAUSE;

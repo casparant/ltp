@@ -69,6 +69,7 @@
 #include <errno.h>
 #include <pwd.h>
 #include <grp.h>
+#include <sys/param.h>
 
 #include "test.h"
 
@@ -149,7 +150,7 @@ int main(int ac, char **av)
 void setup(void)
 {
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_sig(NOFORK, DEF_HANDLER, cleanup);
 

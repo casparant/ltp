@@ -478,10 +478,7 @@ static void setup(int argc, char *argv[])
 		pipe_type = PIPE_UNNAMED;
 		blk_type = UNNAMED_IO;
 	} else {
-		if (mkfifo(pname, 0777) == -1) {
-			tst_brkm(TBROK | TERRNO, cleanup,
-				"mkfifo(%s, 0777) failed", pname);
-		}
+		SAFE_MKFIFO(cleanup, pname, 0777);
 		pipe_type = PIPE_NAMED;
 	}
 }
@@ -494,7 +491,7 @@ static void cleanup(void)
 	semctl(sem_id, 0, IPC_RMID);
 
 	if (!unpipe)
-		SAFE_UNLINK(NULL, pname);
+		unlink(pname);
 
 	tst_rmdir();
 }
@@ -713,6 +710,8 @@ static void do_parent(void)
 			}
 		}
 	}
+
+	SAFE_CLOSE(cleanup, read_fd);
 }
 
 static void usage(void)

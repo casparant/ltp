@@ -89,8 +89,9 @@ int main(int argc, char **argv)
 		/* reset tst_count in case we are looping */
 		tst_count = 0;
 
-		tp.tv_sec = VAL_SEC;
-		tp.tv_usec = VAL_MSEC;
+		gettimeofday(&tp, NULL);
+		tp.tv_sec += VAL_SEC;
+		tp.tv_usec += VAL_MSEC;
 
 		TEST(settimeofday(&tp, NULL));
 		if (TEST_RETURN == -1) {
@@ -152,7 +153,7 @@ int main(void)
  */
 void setup(void)
 {
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_sig(FORK, DEF_HANDLER, cleanup);
 

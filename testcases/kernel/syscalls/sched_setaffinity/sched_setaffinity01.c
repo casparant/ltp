@@ -41,7 +41,7 @@
 #include "test.h"
 #include "safe_macros.h"
 #include "sched_setaffinity.h"
-#include "linux_syscall_numbers.h"
+#include "lapi/syscalls.h"
 
 char *TCID = "sched_setaffinity01";
 
@@ -84,7 +84,7 @@ static void cleanup(void)
 
 	SAFE_SETEUID(NULL, uid);
 
-	if (privileged_pid != 0) {
+	if (privileged_pid > 0) {
 		kill(privileged_pid, SIGKILL);
 		waitpid(privileged_pid, NULL, 0);
 		privileged_pid = 0;
@@ -93,7 +93,7 @@ static void cleanup(void)
 
 static void setup(void)
 {
-	tst_require_root(NULL);
+	tst_require_root();
 	uid = geteuid();
 	ncpus = tst_ncpus_max();
 

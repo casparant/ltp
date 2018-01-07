@@ -45,6 +45,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "test.h"
+#include "safe_macros.h"
 
 static void setup(void);
 static void cleanup(void);
@@ -79,9 +80,6 @@ int main(int argc, char **argv)
 		 * path points to the current directory
 		 */
 		TEST(rmdir("."));
-
-		if (TEST_RETURN == -1) {
-		}
 
 		if (TEST_RETURN == -1) {
 			if (TEST_ERRNO & (EBUSY | ENOTEMPTY)) {
@@ -217,9 +215,7 @@ void setup(void)
 	tst_tmpdir();
 
 	/* Create a directory. */
-	if (mkdir("dir1", 0777) == -1) {
-		tst_brkm(TBROK, cleanup, "mkdir() failed to create dir1.");
-	}
+	SAFE_MKDIR(cleanup, "dir1", 0777);
 
 	/* Create a unique directory name. */
 	sprintf(dir_name, "./dir_%d", getpid());

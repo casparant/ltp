@@ -48,6 +48,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "test.h"
+#include "safe_macros.h"
 
 /* _XOPEN_SOURCE disables NSIG */
 #ifndef NSIG
@@ -77,7 +78,7 @@ static int sigs_map[NUMSIGS];
 static int skip_sig(int sig)
 {
 	switch (sig) {
-	case SIGCLD:
+	case SIGCHLD:
 	case SIGKILL:
 	case SIGALRM:
 	case SIGSTOP:
@@ -111,11 +112,7 @@ int main(int ac, char **av)
 			for (sig = 1; sig < NUMSIGS; sig++) {
 				if (skip_sig(sig))
 					continue;
-				if (kill(pid, sig) < 0) {
-					tst_brkm(TBROK | TERRNO, NULL,
-						 "kill(%d, %d(%s)) failed",
-						 pid, sig, tst_strsig(sig));
-				}
+				SAFE_KILL(NULL, pid, sig);
 			}
 
 			TST_SAFE_CHECKPOINT_WAKE(NULL, 0);

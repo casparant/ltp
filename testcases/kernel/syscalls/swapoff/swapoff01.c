@@ -24,8 +24,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include "config.h"
-#include "linux_syscall_numbers.h"
-#include "tst_fs_type.h"
+#include "lapi/syscalls.h"
 
 static void setup(void);
 static void cleanup(void);
@@ -81,7 +80,7 @@ static void setup(void)
 {
 	tst_sig(FORK, DEF_HANDLER, cleanup);
 
-	tst_require_root(NULL);
+	tst_require_root();
 
 	TEST_PAUSE;
 

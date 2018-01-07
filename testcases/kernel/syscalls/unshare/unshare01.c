@@ -92,6 +92,7 @@
 #include <stdio.h>
 
 #include "test.h"
+#include "safe_macros.h"
 #include "config.h"
 
 char *TCID = "unshare01";
@@ -144,6 +145,8 @@ void cleanup(void)
 /******************************************************************************/
 void setup(void)
 {
+	tst_require_root();
+
 	/* Capture signals if any */
 	/* Create temporary directories */
 	TEST_PAUSE;
@@ -185,9 +188,7 @@ int main(int ac, char **av)
 				}
 				exit(rval);
 			} else {
-				if (wait(&rval) == -1)
-					tst_brkm(TBROK | TERRNO, cleanup,
-						 "wait failed");
+				SAFE_WAIT(cleanup, &rval);
 				if (rval != 0 && WIFEXITED(rval)) {
 					switch (WEXITSTATUS(rval)) {
 					case 1:
@@ -223,9 +224,7 @@ int main(int ac, char **av)
 				}
 				exit(rval);
 			} else {
-				if (wait(&rval) == -1)
-					tst_brkm(TBROK | TERRNO, cleanup,
-						 "wait failed");
+				SAFE_WAIT(cleanup, &rval);
 				if (rval != 0 && WIFEXITED(rval)) {
 					switch (WEXITSTATUS(rval)) {
 					case 1:
@@ -261,9 +260,7 @@ int main(int ac, char **av)
 				}
 				exit(rval);
 			} else {
-				if (wait(&rval) == -1)
-					tst_brkm(TBROK | TERRNO, cleanup,
-						 "wait failed");
+				SAFE_WAIT(cleanup, &rval);
 				if (rval != 0 && WIFEXITED(rval)) {
 					switch (WEXITSTATUS(rval)) {
 					case 1:

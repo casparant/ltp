@@ -28,6 +28,7 @@
 #include <stdlib.h>
 
 #include "test.h"
+#include "safe_macros.h"
 #include "compat_16.h"
 
 #define FAILED  1
@@ -83,7 +84,7 @@ static struct test_data_t {
 	&nobody.pw_uid, &bin.pw_uid, &fail, &nobody, &nobody,
 		    "After setreuid(nobody, bin),"},};
 
-int TST_TOTAL = sizeof(test_data) / sizeof(test_data[0]);
+int TST_TOTAL = ARRAY_SIZE(test_data);
 
 static void setup(void);
 static void cleanup(void);
@@ -150,7 +151,7 @@ int main(int ac, char **av)
 
 static void setup(void)
 {
-	tst_require_root(NULL);
+	tst_require_root();
 
 	tst_sig(FORK, DEF_HANDLER, cleanup);
 
@@ -169,8 +170,7 @@ static void setup(void)
 	bin = *(getpwnam("bin"));
 	UID16_CHECK(bin.pw_uid, setreuid, cleanup);
 
-	if (setuid(nobody.pw_uid) < 0)
-		tst_brkm(TBROK | TERRNO, NULL, "setuid() to nobody failed");
+	SAFE_SETUID(NULL, nobody.pw_uid);
 
 	TEST_PAUSE;
 }

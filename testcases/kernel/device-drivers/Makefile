@@ -26,6 +26,7 @@ SUBDIRS		:= acpi \
 		   rcu \
 		   rtc \
 		   tbio \
-		   uaccess
+		   uaccess \
+		   zram
 
 include $(top_srcdir)/include/mk/generic_trunk_target.mk
